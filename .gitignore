@@ -3,7 +3,6 @@ __pycache__/
 models
 logs/
 run_plots/
-simple_retico_agent.egg-info
-retico_conversational_agent.egg-info
+retico_conversational_agent_unity.egg-info
 build/
 _build/

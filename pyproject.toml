@@ -3,7 +3,7 @@ requires = ["setuptools", "setuptools-scm"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "retico-conversational-agent"
+name = "retico-conversational-agent-unity"
 authors = [{ name = "Marius Le Chapelier", email = "mariuslechaper@gmail.com" }]
 description = ""
 readme = "README.md"
