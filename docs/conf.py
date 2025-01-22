@@ -16,7 +16,7 @@ import sys
 sys.path.insert(0, os.path.abspath(os.path.join("../src")))
 sys.path.insert(0, os.path.abspath(".."))
 
-import retico_conversational_agent
+import retico_conversational_agent_unity
 
 autoapi_dirs = ["../src"]
 autodoc_inherit_docstrings = True

@@ -1,5 +1,7 @@
 import os
 
+from retico_conversational_agent_unity.gesture_demo import GestureDemoModule
+
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from functools import partial
 import torch
@@ -16,6 +18,8 @@ from retico_core.log_utils import (
     configurate_plot,
     plot_once,
 )
+
+from retico_amq.amq import AMQReader, AMQWriter, AMQBridge
 
 from retico_conversational_agent_unity.dialogue_history import DialogueHistory
 from retico_conversational_agent_unity.VAD_DM import VadModule
@@ -391,7 +395,8 @@ def main_DM_unity():
         model=tts_model,
         printing=printing,
         frame_duration=tts_frame_length,
-        device=device,
+        # device=device,
+        device="cpu"
     )
 
     speaker = SpeakerDmModule(
@@ -436,6 +441,7 @@ def main_DM_unity():
         )
 
 if __name__ == "__main__":
-    main_DM()
+    main_DM_unity()
+    # main_DM()
     # test_cuda()
     # plot_once(plot_config_path="configs/plot_config_DM.json")

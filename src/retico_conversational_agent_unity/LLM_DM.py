@@ -68,9 +68,9 @@ import retico_core
 from retico_core.text import SpeechRecognitionIU
 from retico_core.log_utils import log_exception
 
-from retico_conversational_agent.dialogue_history import DialogueHistory
-from retico_conversational_agent.utils import device_definition
-from retico_conversational_agent.additional_IUs import (
+from retico_conversational_agent_unity.dialogue_history import DialogueHistory
+from retico_conversational_agent_unity.utils import device_definition
+from retico_conversational_agent_unity.additional_IUs import (
     VADTurnAudioIU,
     TextAlignedAudioIU,
     TurnTextIU,

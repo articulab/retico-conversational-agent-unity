@@ -115,9 +115,9 @@ The message `Dialog system running until ENTER key is pressed` will be printed i
 If you speak to the system, after a short time, you should hear the system answering you.
 If you want to quit, and close the system, press the `ENTER` key.
 
-A log file will be created (in `src/retico_conversational_agent/logs/run_0/log.log` if it wasn't modified), and will receive every log message of every module during the system's execution.
+A log file will be created (in `src/retico_conversational_agent_unity/logs/run_0/log.log` if it wasn't modified), and will receive every log message of every module during the system's execution.
 
-A plot of the system's execution will be created (in `src/retico_conversational_agent/run_plots/run_0/plot_IU_exchange.png` if it wasn't modified), and will show information, in real time, about IUs exchanges between modules (create_iu, process_update, etc), dialogue events (user BOT, user EOT, etc), or internal events (start_generation, etc).
+A plot of the system's execution will be created (in `src/retico_conversational_agent_unity/run_plots/run_0/plot_IU_exchange.png` if it wasn't modified), and will show information, in real time, about IUs exchanges between modules (create_iu, process_update, etc), dialogue events (user BOT, user EOT, etc), or internal events (start_generation, etc).
 
 ![docs/img/plot_IU_exchange.png](docs/img/plot_IU_exchange.png)
 ![img/plot_IU_exchange.png](img/plot_IU_exchange.png)

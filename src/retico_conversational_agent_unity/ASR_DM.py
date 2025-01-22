@@ -31,8 +31,8 @@ from faster_whisper import WhisperModel
 import retico_core
 from retico_core.log_utils import log_exception
 
-from retico_conversational_agent.utils import device_definition
-from retico_conversational_agent.additional_IUs import DMIU, SpeechRecognitionTurnIU
+from retico_conversational_agent_unity.utils import device_definition
+from retico_conversational_agent_unity.additional_IUs import DMIU, SpeechRecognitionTurnIU
 
 transformers.logging.set_verbosity_error()
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
