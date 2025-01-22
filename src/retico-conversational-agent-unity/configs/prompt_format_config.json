@@ -1,0 +1,25 @@
+{
+    "user": {
+        "role": "Child",
+        "role_sep": ":",
+        "pre": "",
+        "suf": "\n\n"
+    },
+    "agent": {
+        "role": "Teacher",
+        "role_sep": ":",
+        "pre": "",
+        "suf": "\n\n"
+    },
+    "system_prompt": {
+        "pre": "<<SYS>>",
+        "suf": "<</SYS>>\n\n"
+    },
+    "prompt": {
+        "pre": "[INST] ",
+        "suf": " [/INST]"
+    },
+    "interruption": {
+        "suf": "..."
+    }
+}

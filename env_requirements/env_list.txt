@@ -1,0 +1,109 @@
+# s1
+create conda env from retico_cuda_curr.yml
+install the same version of llama-cpp-python that is in retico_cuda env (0.2.79) with `set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install llama-cpp-python --no-cache-dir`
+-> LLM on CUDA working  
+
+# s2
+create conda env from retico_cuda_curr.yml
+install last version of llama-cpp-python (0.3.2) with `set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install llama-cpp-python --no-cache-dir`
+-> LLM on CUDA working  
+
+# s3
+create conda env with python 3.11.7 
+update conda env from retico_cuda_curr.yml
+install last version of llama-cpp-python (0.3.2) with `set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install llama-cpp-python --no-cache-dir`
+-> LLM on CUDA working
+
+# s4 
+create conda env with python 3.11.7 
+install all dependencies (highest possible version)
+- `pip install .` (all dependencies in pyproject)
+-> System working for cpu
+install cuda and C related libs for CUDA support (TTS, ASR, LLM)
+- `conda install cuda -c nvidia/label/cuda-11.8.0`
+- `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118`
+-> PB with nvcc (error when running simple-retico-agent)
+- `conda install pytorch torchvision torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia`
+reinstall llama-cpp-python with CUDA support with `set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install llama-cpp-python --no-cache-dir`
+-> LLM on CUDA working ???
+
+# s5
+create conda env with python 3.11.7
+- `conda create -n env python=3.11.7
+install all dependencies (highest possible version)
+- `pip install .` (all dependencies in pyproject)
+-> System working for cpu
+install cuda and C related libs for CUDA support (TTS, ASR, LLM)
+- `conda install pytorch torchvision=0.16.2 torchaudio pytorch-cuda=11.8 -c pytorch -c nvidia`
+- `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --force-reinstall --no-cache`
+-> System (but LLM) working on CUDA ??? YES
+reinstall llama-cpp-python with CUDA support with `set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install llama-cpp-python --no-cache-dir`
+-> could not install a llama-cpp-python cuda version
+-> LLM on CUDA working ???
+
+# s6
+create conda env with python 3.11.7
+- `conda create -n env python=3.11.7`
+install all dependencies (highest possible version, but fixed depndencies version for TTS)
+- `pip install .` (all dependencies in pyproject)
+-> System working for cpu : YES
+install cuda and C related libs for CUDA support (TTS, ASR, LLM)
+- `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --force-reinstall --no-cache`
+-> System (but LLM) working on CUDA : YES
+reinstall llama-cpp-python with CUDA support with :
+- `set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install --no-cache-dir llama-cpp-python`
+-> error while trying to install cuda version of llama-cpp-python
+-> LLM on CUDA working ???
+
+# s8
+create conda env with python 3.11.7
+- `conda create -n env python=3.11.7`
+install all dependencies (highest possible version)
+- `pip install .` (all dependencies in pyproject)
+-> System working for cpu : YES
+install cuda and C related libs for CUDA support (TTS, ASR, LLM)
+- `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --force-reinstall --no-cache`
+-> System (but LLM) working on CUDA : YES
+reinstall llama-cpp-python with CUDA support with :
+- `set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install --no-cache-dir llama-cpp-python`
+-> LLM on CUDA working YES
+-> how to reproduce ? llama-cpp-python not installable in s9...
+
+# s9
+create conda env with python 3.11.7
+- `conda create -n env python=3.11.7`
+install pyaudio (as it is not part of retico-core anymore)
+- `pip install pyaudio`
+install all dependencies (highest possible version)
+- `pip install .` (all dependencies in pyproject)
+-> System working for cpu : YES
+install cuda and C related libs for CUDA support (TTS, ASR, LLM)
+- `pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu118 --force-reinstall --no-cache`
+-> raises following error (more a warning): 
+```
+ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+blis 1.0.1 requires numpy<3.0.0,>=2.0.0, but you have numpy 1.26.3 which is incompatible.
+pydantic 2.10.1 requires typing-extensions>=4.12.2, but you have typing-extensions 4.9.0 which is incompatible.
+thinc 8.3.2 requires numpy<2.1.0,>=2.0.0; python_version >= "3.9", but you have numpy 1.26.3 which is incompatible.
+typeguard 4.4.1 requires typing-extensions>=4.10.0, but you have typing-extensions 4.9.0 which is incompatible.
+Successfully installed MarkupSafe-2.1.5 filelock-3.13.1 fsspec-2024.2.0 jinja2-3.1.3 mpmath-1.3.0 networkx-3.2.1 numpy-1.26.3 pillow-10.2.0 sympy-1.13.1 torch-2.5.1+cu118 torchaudio-2.5.1+cu118 torchvision-0.20.1+cu118 typing-extensions-4.9.0
+```
+-> System (but LLM) working on CUDA : YES
+reinstall llama-cpp-python with CUDA support with :
+- `pip uninstall llama-cpp-python && set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install --no-cache-dir llama-cpp-python`
+-> LLM on CUDA working ? Not the first time
+reinstall it : 
+- `pip uninstall llama-cpp-python && set "CMAKE_ARGS=-DGGML_CUDA=on" && set "FORCE_CMAKE=1" && pip install --no-cache-dir llama-cpp-python`
+-> LLM on CUDA working ? YES
+
+# cuda122
+conda create -n env python=3.11.7
+pip install .
+pip install torch torchvision torchaudio
+-> cuda torch not available
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121 --force-reinstall --no-cache
+-> cuda torch available !
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
+-> not working, LLM on CPU
+pip install llama-cpp-python --extra-index-url https://abetlen.github.io/llama-cpp-python/whl/cu121
+-> not working, LLM on CPU

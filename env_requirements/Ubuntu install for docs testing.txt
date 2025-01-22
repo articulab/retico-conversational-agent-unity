@@ -1,0 +1,16 @@
+# Ubuntu install for docs testing
+
+# create env
+python3.11 -m venv docstest
+
+# activate env
+source docstest/bin/activate
+
+# clone simple-retico-test
+git clone https://github.com/articulab/simple-retico-agent
+
+# install docs/requirements.txt
+pip install -r docs/requirements.txt
+
+# test building docs
+make html

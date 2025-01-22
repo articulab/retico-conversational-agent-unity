@@ -1,0 +1,27 @@
+{
+    "any_module": {
+        "events": {
+            "create_iu": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "mediumblue",
+                    "marker_size": 12
+                }
+            },
+            "append UM": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "deepskyblue",
+                    "marker_size": 8
+                }
+            },
+            "process_update": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "mediumblue",
+                    "marker_size": 4
+                }
+            }
+        }
+    }
+}

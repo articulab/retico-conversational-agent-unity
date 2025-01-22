@@ -1,0 +1,142 @@
+{
+    "any_module": {
+        "events": {
+            "process_update": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "navy",
+                    "marker_size": 2
+                }
+            },
+            "append UM": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "cyan",
+                    "marker_size": 6
+                }
+            },
+            "create_iu": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "navy",
+                    "marker_size": 10
+                }
+            },
+            "send_clause": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "deepskyblue",
+                    "marker_size": 15
+                }
+            },
+            "start_answer_generation": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "seagreen",
+                    "marker_size": 35
+                }
+            },
+            "EOT": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "r",
+                    "marker_size": 35
+                }
+            }
+        }
+    },
+    "Speaker Simple Module": {
+        "events": {
+            "output_silence": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "darkgray",
+                    "marker_size": 7
+                }
+            },
+            "output_audio": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "seagreen",
+                    "marker_size": 10
+                }
+            }
+        }
+    },
+    "TTS Simple Module": {
+        "events": {
+            "after_synthesize": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "darkmagenta",
+                    "marker_size": 25
+                }
+            },
+            "before_synthesize": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "violet",
+                    "marker_size": 30
+                }
+            }
+        }
+    },
+    "LLM Simple Module": {
+        "events": {}
+    },
+    "ASR Whisper Simple Module": {
+        "events": {
+            "predict": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "darkmagenta",
+                    "marker_size": 25
+                }
+            }
+        }
+    },
+    "VAD Simple Module": {
+        "events": {
+            "VA_overlap": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "orange",
+                    "marker_size": 16
+                }
+            },
+            "VA_user": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "red",
+                    "marker_size": 12
+                }
+            },
+            "VA_agent": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "seagreen",
+                    "marker_size": 12
+                }
+            },
+            "VA_silence": {
+                "plot_settings": {
+                    "marker": "|",
+                    "marker_color": "darkgray",
+                    "marker_size": 8
+                }
+            },
+            "create_iu": {
+                "exclude": true
+            },
+            "append UM": {
+                "exclude": true
+            },
+            "process_update": {
+                "exclude": true
+            }
+        }
+    },
+    "Microphone Module": {
+        "events": {}
+    }
+}
