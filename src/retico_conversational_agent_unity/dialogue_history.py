@@ -174,9 +174,7 @@ class DialogueHistory:
         """
         assert set(("turn_id", "speaker", "text")) <= set(utterance)
         # insure that turn_id is not None, and increment turn_id for system that do not have a turn id cpt (like DM).
-        utterance["turn_id"] = (
-            len(self.dialogue_history) if utterance["turn_id"] else utterance["turn_id"]
-        )
+        utterance["turn_id"] = len(self.dialogue_history) if utterance["turn_id"] else utterance["turn_id"]
         self.dialogue_history.append(utterance)
         c = self.prompt_format_config
         s = utterance["speaker"]
@@ -232,9 +230,7 @@ class DialogueHistory:
             nb_tokens = len(prompt_tokens)
         return prompt, prompt_tokens
 
-    def interruption_alignment_new_agent_sentence(
-        self, utterance, punctuation_ids, interrupted_speaker_iu
-    ):
+    def interruption_alignment_new_agent_sentence(self, utterance, punctuation_ids, interrupted_speaker_iu):
         """After an interruption, this function will align the sentence stored
         in dialogue history with the last word spoken by the agent. With the
         informations stored in interrupted_speaker_iu, this function will
@@ -265,9 +261,7 @@ class DialogueHistory:
         sentence_clauses = sentence_clauses[: interrupted_speaker_iu.clause_id + 1]
 
         # Shorten the last agent utterance until the last char outputted by the speakermodule before the interruption
-        sentence_clauses[-1] = sentence_clauses[-1][
-            : interrupted_speaker_iu.char_id + 1
-        ]
+        sentence_clauses[-1] = sentence_clauses[-1][: interrupted_speaker_iu.char_id + 1]
 
         # Merge the clauses back together
         new_agent_sentence = b"".join(sentence_clauses)
@@ -324,11 +318,7 @@ class DialogueHistory:
         prompt = self.format("prompt", prompt)
 
         # put additional "/n/nTeacher :" at the end of the prompt, so that it is not the LLM that generates the role
-        prompt += (
-            "\n\n"
-            + self.prompt_format_config["agent"]["pre"]
-            + self.format_role("agent")
-        )
+        prompt += "\n\n" + self.prompt_format_config["agent"]["pre"] + self.format_role("agent")
         return prompt
 
     def get_stop_patterns(self):
@@ -339,11 +329,23 @@ class DialogueHistory:
         """
         c = self.prompt_format_config
         user_stop_pat = (
-            bytes(c["user"]["role"] + " " + c["user"]["role_sep"], encoding="utf-8"),
-            bytes(c["user"]["role"] + "" + c["user"]["role_sep"], encoding="utf-8"),
+            bytes(
+                c["user"]["role"] + " " + c["user"]["role_sep"],
+                encoding="utf-8",
+            ),
+            bytes(
+                c["user"]["role"] + "" + c["user"]["role_sep"],
+                encoding="utf-8",
+            ),
         )
         agent_stop_pat = (
-            bytes(c["agent"]["role"] + " " + c["agent"]["role_sep"], encoding="utf-8"),
-            bytes(c["agent"]["role"] + "" + c["agent"]["role_sep"], encoding="utf-8"),
+            bytes(
+                c["agent"]["role"] + " " + c["agent"]["role_sep"],
+                encoding="utf-8",
+            ),
+            bytes(
+                c["agent"]["role"] + "" + c["agent"]["role_sep"],
+                encoding="utf-8",
+            ),
         )
         return (user_stop_pat, agent_stop_pat)

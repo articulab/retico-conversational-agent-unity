@@ -7,6 +7,7 @@ Additional Incremental Unit classes used in Simple Retico Agent.
 
 import retico_core
 
+
 class SpeechRecognitionTurnIU(retico_core.text.SpeechRecognitionIU):
     """Same IU as SpeechRecognition, but enhanced with turn_id."""
 
@@ -17,6 +18,7 @@ class SpeechRecognitionTurnIU(retico_core.text.SpeechRecognitionIU):
     def __init__(self, turn_id=None, **kwargs):
         super().__init__(**kwargs)
         self.turn_id = turn_id
+
 
 class TextFinalIU(retico_core.text.TextIU):
     """TextIU with an additional final attribute."""
@@ -349,9 +351,7 @@ class VADTurnAudioIU(retico_core.audio.AudioIU):
         )
         self.vad_state = vad_state
 
-    def set_data(
-        self, vad_state=None, audio=None, nframes=None, rate=None, sample_width=None
-    ):
+    def set_data(self, vad_state=None, audio=None, nframes=None, rate=None, sample_width=None):
         """Sets AudioIU parameters and vad_state."""
         # vad_state
         self.vad_state = vad_state

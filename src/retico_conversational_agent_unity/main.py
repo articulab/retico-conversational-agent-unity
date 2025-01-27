@@ -1,6 +1,8 @@
 import os
 
 from retico_conversational_agent_unity.gesture_demo import GestureDemoModule
+from retico_conversational_agent_unity.gesture_productor_demo import GestureProducerDemoModule
+from retico_conversational_agent_unity.unity_receptor import UnityMessageIU, UnityReceptorModule
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from functools import partial
@@ -31,6 +33,7 @@ from retico_conversational_agent_unity.dialogue_manager import (
     DialogueManagerModule,
     DialogueManagerModule_2,
 )
+
 
 def test_cuda():
     # parameters definition
@@ -81,6 +84,7 @@ def test_cuda():
     except Exception:
         terminal_logger.exception("test")
         network.stop(llm)
+
 
 def main_DM():
     """The `main_DM` function creates and runs a dialog system that is able to
@@ -154,9 +158,7 @@ def main_DM():
     ]
     # configurate logger
     # terminal_logger, _ = retico_core.log_utils.configurate_logger(log_folder)
-    terminal_logger, _ = retico_core.log_utils.configurate_logger(
-        log_folder, filters=filters
-    )
+    terminal_logger, _ = retico_core.log_utils.configurate_logger(log_folder, filters=filters)
 
     # configure plot
     configurate_plot(
@@ -254,6 +256,7 @@ def main_DM():
             plot_config_path=plot_config_path,
         )
 
+
 def main_DM_unity():
     """The `main_DM` function creates and runs a dialog system that is able to
     have a conversation with the user.
@@ -309,6 +312,7 @@ def main_DM_unity():
     prompt_format_config = "configs/prompt_format_config.json"
     context_size = 2000
     destination = "/topic/AMQ_test"
+    destination_2 = "/topic/AMQ_test_2"
     ip = "localhost"
     # port = "61613"
     # ip = "192.168.76.242"
@@ -331,9 +335,7 @@ def main_DM_unity():
     ]
     # configurate logger
     # terminal_logger, _ = retico_core.log_utils.configurate_logger(log_folder)
-    terminal_logger, _ = retico_core.log_utils.configurate_logger(
-        log_folder, filters=filters
-    )
+    terminal_logger, _ = retico_core.log_utils.configurate_logger(log_folder, filters=filters)
 
     # configure plot
     configurate_plot(
@@ -396,7 +398,7 @@ def main_DM_unity():
         printing=printing,
         frame_duration=tts_frame_length,
         # device=device,
-        device="cpu"
+        device="cpu",
     )
 
     speaker = SpeakerDmModule(
@@ -408,6 +410,10 @@ def main_DM_unity():
     bridge = AMQBridge([], destination)
 
     aw = AMQWriter(ip=ip, port=port, print=printing)
+
+    ar = AMQReader(ip=ip, port=port, print=printing)
+
+    ul = UnityReceptorModule()
 
     # create network
     mic.subscribe(vad)
@@ -424,6 +430,7 @@ def main_DM_unity():
     # speaker.subscribe(dm)
     gesture_demo.subscribe(bridge)
     bridge.subscribe(aw)
+    ar.subscribe(ul)
 
     # running system
     try:
@@ -440,8 +447,86 @@ def main_DM_unity():
             plot_config_path=plot_config_path,
         )
 
+
+def main_demo_unity():
+    # parameters definition
+    printing = False
+    log_folder = "logs/run"
+    plot_config_path = "configs/plot_config_DM.json"
+    plot_live = True
+    destination = "/topic/AMQ_test"
+    destination_2 = "/topic/AMQ_test_reception"
+    ip = "localhost"
+    # port = "61613"
+    # ip = "192.168.76.242"
+    port = "61613"
+
+    # filters
+    # filters = []
+    filters = [
+        partial(
+            filter_cases,
+            cases=[
+                # [("debug", [True])],
+                [("module", ["GestureProducerDemo Module", "UnityReceptor Module", "AMQReader Module"])],
+                [("level", ["warning", "error"])],
+            ],
+            # cases=[
+            #     [("module", ["DialogueManager Module"])],
+            #     [("level", ["warning", "error"])],
+            # ],
+        )
+    ]
+    # configurate logger
+    # terminal_logger, _ = retico_core.log_utils.configurate_logger(log_folder)
+    terminal_logger, _ = retico_core.log_utils.configurate_logger(log_folder, filters=filters)
+
+    # configure plot
+    configurate_plot(
+        is_plot_live=plot_live,
+        refreshing_time=1,
+        plot_config_path=plot_config_path,
+        window_duration=30,
+    )
+
+    gesture_prod_demo = GestureProducerDemoModule()
+
+    bridge = AMQBridge([], destination)
+
+    aw = AMQWriter(ip=ip, port=port, print=printing)
+
+    ar = AMQReader(ip=ip, port=port, print=printing)
+
+    ul = UnityReceptorModule()
+
+    ar.add(destination=destination_2, target_iu_type=UnityMessageIU)
+
+    # create network
+    gesture_prod_demo.subscribe(bridge)
+    gesture_prod_demo.subscribe(ul)
+    bridge.subscribe(aw)
+    aw.subscribe(ar)  # just so that they are on the same network
+    ar.subscribe(ul)
+
+    # running system
+    try:
+        network.run(ul)
+        # terminal_logger.info("Dialog system running until ENTER key is pressed")
+        print("Dialog system running until ENTER key is pressed")
+        input()
+        network.stop(ul)
+    except Exception:
+        terminal_logger.exception("exception in main")
+        network.stop(ul)
+    finally:
+        plot_once(
+            plot_config_path=plot_config_path,
+        )
+
+
 if __name__ == "__main__":
-    main_DM_unity()
+    main_demo_unity()
+    # main_DM_unity()
     # main_DM()
     # test_cuda()
     # plot_once(plot_config_path="configs/plot_config_DM.json")
