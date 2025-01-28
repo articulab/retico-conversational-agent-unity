@@ -68,28 +68,27 @@ class GestureDemoModule(retico_core.abstract.AbstractModule):
                     self.terminal_logger.info("agent_EOT")
                     self.file_logger.info("EOT")
                     output_iu = self.create_iu(
-                        clause_id=clause_ius[0].clause_id,
-                        turn_id=clause_ius[0].turn_id,
-                        final=clause_ius[0].final,
+                        clauseID=clause_ius[0].clause_id,
+                        turnID=clause_ius[0].turn_id,
+                        final=True,
                     )
                 else:
 
                     # recreate full audio
                     full_data = b""
-                    full_sentence = ""
                     for iu in clause_ius:
                         full_data += bytes(iu.raw_audio)
-                        full_sentence += iu.grounded_word
 
                     len_audio_bytes = len(full_data)
                     len_audio_seconds = len_audio_bytes / (self.tts_framerate * self.samplewidth)
 
-                    self.terminal_logger.info(
-                        f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True
-                    )
+                    # self.terminal_logger.info(
+                    #     f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True
+                    # )
 
                     # save full audio into wav file
-                    path = f"C:/Users/Sara Articulab/Documents/GitHub/retico_test/wav_files/clause_{clause_ius[0].clause_id}.wav"
+                    # path = f"C:/Users/Sara Articulab/Documents/GitHub/retico_test/wav_files/clause_{clause_ius[0].clause_id}.wav"
+                    path = f"wav_files/clause_{clause_ius[0].clause_id}.wav"
                     with wave.open(path, "wb") as wav_file:
                         wav_file.setnchannels(self.channels)  # Set the number of channels
                         wav_file.setsampwidth(self.samplewidth)  # Set the sample width in bytes
@@ -115,14 +114,19 @@ class GestureDemoModule(retico_core.abstract.AbstractModule):
                     ]
 
                     output_iu = self.create_iu(
-                        turnID=iu.turn_id, clauseID=iu.clause_id, interrupt=0, audios=audios, animations=animations
+                        turnID=clause_ius[0].turn_id,
+                        clauseID=clause_ius[0].clause_id,
+                        interrupt=0,
+                        audios=audios,
+                        animations=animations,
                     )
-                    um = retico_core.UpdateMessage()
-                    um.add_iu(output_iu, retico_core.UpdateType.ADD)
-                    self.append(um)
-                    self.terminal_logger.info(
-                        "TestGestureDemo creates a retico IU",
-                    )
+
+                um = retico_core.UpdateMessage()
+                um.add_iu(output_iu, retico_core.UpdateType.ADD)
+                self.append(um)
+                self.terminal_logger.info(
+                    "TestGestureDemo creates a retico IU",
+                )
             # try:
             # turnID = self.cpt // 2
             # clauseID = self.cpt % 2
