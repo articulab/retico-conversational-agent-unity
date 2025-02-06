@@ -137,9 +137,7 @@ class SpeakerDmModule(retico_core.AbstractModule):
                         output_iu = self.create_iu(
                             event="continue",
                         )
-                        um = retico_core.UpdateMessage.from_iu(
-                            output_iu, retico_core.UpdateType.ADD
-                        )
+                        um = retico_core.UpdateMessage.from_iu(output_iu, retico_core.UpdateType.ADD)
                         self.append(um)
                         self.audio_iu_buffer = self.interrupted_turn_iu_buffer
                         self.soft_interrupted_iu = None
@@ -166,21 +164,15 @@ class SpeakerDmModule(retico_core.AbstractModule):
                                 final=iu.final,
                                 event="interruption",
                             )
-                            um = retico_core.UpdateMessage.from_iu(
-                                output_iu, retico_core.UpdateType.ADD
-                            )
+                            um = retico_core.UpdateMessage.from_iu(output_iu, retico_core.UpdateType.ADD)
                             self.append(um)
                             self.soft_interrupted_iu = output_iu
                             self.interrupted_turn_iu_buffer = self.audio_iu_buffer
                             self.audio_iu_buffer = []
                             self.current_output = []
                         else:
-                            self.terminal_logger.info(
-                                "speaker soft interruption but no outputted audio yet"
-                            )
-                            self.file_logger.info(
-                                "speaker soft interruption but no outputted audio yet"
-                            )
+                            self.terminal_logger.info("speaker soft interruption but no outputted audio yet")
+                            self.file_logger.info("speaker soft interruption but no outputted audio yet")
                     elif iu.action == "hard_interruption":
                         self.terminal_logger.info("hard_interruption")
                         self.file_logger.info("hard_interruption")
@@ -197,10 +189,7 @@ class SpeakerDmModule(retico_core.AbstractModule):
                             )
                             um = retico_core.UpdateMessage()
                             um.add_ius(
-                                [
-                                    (um_iu, retico_core.UpdateType.ADD)
-                                    for um_iu in self.current_output + [output_iu]
-                                ]
+                                [(um_iu, retico_core.UpdateType.ADD) for um_iu in self.current_output + [output_iu]]
                             )
                             self.append(um)
                             self.interrupted_iu = output_iu
@@ -209,12 +198,8 @@ class SpeakerDmModule(retico_core.AbstractModule):
                             self.current_output = []
                             # self.latest_processed_iu = None
                         else:
-                            self.terminal_logger.info(
-                                "speaker interruption but no outputted audio yet"
-                            )
-                            self.file_logger.info(
-                                "speaker interruption but no outputted audio yet"
-                            )
+                            self.terminal_logger.info("speaker interruption but no outputted audio yet")
+                            self.file_logger.info("speaker interruption but no outputted audio yet")
                     elif iu.action == "repeat_last_turn":
                         self.terminal_logger.info("repeat ius received", debug=True)
                         self.audio_iu_buffer.append(iu)
@@ -237,10 +222,7 @@ class SpeakerDmModule(retico_core.AbstractModule):
                             TTS_iu_turn=iu.turn_id,
                             iu_final=iu.final,
                         )
-                        if (
-                            not iu.final
-                            and self.soft_interrupted_iu.turn_id != iu.turn_id
-                        ):
+                        if not iu.final and self.soft_interrupted_iu.turn_id != iu.turn_id:
                             self.soft_interrupted_iu = None
                             self.audio_iu_buffer.append(iu)
                             self.interrupted_turn_iu_buffer = []
@@ -294,12 +276,7 @@ class SpeakerDmModule(retico_core.AbstractModule):
             )
 
             um = retico_core.UpdateMessage()
-            um.add_ius(
-                [
-                    (um_iu, retico_core.UpdateType.ADD)
-                    for um_iu in self.current_output + [output_iu]
-                ]
-            )
+            um.add_ius([(um_iu, retico_core.UpdateType.ADD) for um_iu in self.current_output + [output_iu]])
             self.current_output = []
             self.append(um)
             silence_bytes = b"\x00" * frame_count * self.channels * self.sample_width
@@ -322,9 +299,7 @@ class SpeakerDmModule(retico_core.AbstractModule):
                     final=iu.final,
                     event="agent_BOT",
                 )
-                um = retico_core.UpdateMessage.from_iu(
-                    output_iu, retico_core.UpdateType.ADD
-                )
+                um = retico_core.UpdateMessage.from_iu(output_iu, retico_core.UpdateType.ADD)
                 self.append(um)
 
             self.terminal_logger.info("output_audio")

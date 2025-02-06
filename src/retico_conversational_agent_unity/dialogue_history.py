@@ -260,8 +260,9 @@ class DialogueHistory:
         # remove all clauses after clause_id (the interrupted clause)
         sentence_clauses = sentence_clauses[: interrupted_speaker_iu.clause_id + 1]
 
-        # Shorten the last agent utterance until the last char outputted by the speakermodule before the interruption
-        sentence_clauses[-1] = sentence_clauses[-1][: interrupted_speaker_iu.char_id + 1]
+        if interrupted_speaker_iu.char_id is not None:
+            # Shorten the last agent utterance until the last char outputted by the speakermodule before the interruption
+            sentence_clauses[-1] = sentence_clauses[-1][: interrupted_speaker_iu.char_id + 1]
 
         # Merge the clauses back together
         new_agent_sentence = b"".join(sentence_clauses)

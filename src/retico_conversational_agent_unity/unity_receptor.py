@@ -53,6 +53,7 @@ class UnityReceptorModule(retico_core.abstract.AbstractModule):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)
         self.last_clause_each_turn = dict()
+        self.latest_processed_iu = None
 
     def process_update(self, update_message):
         self.terminal_logger.info("process_update")
@@ -65,62 +66,85 @@ class UnityReceptorModule(retico_core.abstract.AbstractModule):
                 if hasattr(iu, "final") and iu.final:
                     self.last_clause_each_turn[iu.turnID] = iu.clauseID
                     self.terminal_logger.info("DICT updated : ", dict=self.last_clause_each_turn)
+                    self.file_logger.info("turn generated")
 
             elif isinstance(iu, UnityMessageIU):
+
+                # # agent EOT
+                # if iu.event == "agent_EOT":
+                #     self.VA_agent = False
+                # if iu.event == "interruption":
+                #     self.VA_agent = False
+                # # agent BOT
+                # elif iu.event == "agent_BOT":
+                #     self.VA_agent = True
+                # elif iu.event == "continue":
+                #     self.VA_agent = True
+
                 self.terminal_logger.info(
                     "message received from Unity", dict=self.last_clause_each_turn, iu=iu.__dict__
                 )
 
-                # check if turn completed
-                if iu.turnID in self.last_clause_each_turn and self.last_clause_each_turn[iu.turnID] == iu.clauseID:
-                    # clear from dict
-                    del self.last_clause_each_turn[iu.turnID]
+                last_iu_of_last_clause = (
+                    iu.turnID in self.last_clause_each_turn and self.last_clause_each_turn[iu.turnID] == iu.clauseID
+                )
+                eot = last_iu_of_last_clause and iu.status == "completed"
 
-                    # create and send IU
-                    self.terminal_logger.info("agent_EOT")
-                    self.file_logger.info("EOT")
+                if self.latest_processed_iu is None or (
+                    self.latest_processed_iu.turnID is not None
+                    and iu.turnID is not None
+                    and self.latest_processed_iu.turnID < iu.turnID
+                ):
+                    self.file_logger.info("agent_BOT")
                     output_iu = self.create_iu(
-                        grounded_word=None,
-                        word_id=None,
-                        char_id=None,
-                        clause_id=iu.clauseID,
-                        turn_id=iu.turnID,
-                        final=True,
-                        event="agent_EOT",
+                        clause_id=iu.clauseID, turn_id=iu.turnID, event="agent_BOT", final=last_iu_of_last_clause
                     )
-
                     um = retico_core.UpdateMessage()
-                    # um.add_ius([(um_iu, retico_core.UpdateType.ADD) for um_iu in self.current_output + [output_iu]])
-                    # self.current_output = []
                     um.add_iu(output_iu, retico_core.UpdateType.ADD)
                     self.append(um)
 
-                # testing wiith John's space key
+                if iu.status == "interrupted" or iu.status == "aborted":
+                    self.file_logger.info("interruption")
+                    output_iu = self.create_iu(clause_id=iu.clauseID, turn_id=iu.turnID, event="interruption")
+                    um = retico_core.UpdateMessage()
+                    um.add_iu(output_iu, retico_core.UpdateType.ADD)
+                    self.append(um)
+
+                # check if turn completed
+                if eot:
+                    self.send_EOT(iu.turnID, iu.clauseID)
+
+                # testing with John's space key
                 if iu.requestID[0:5] == "billy" and len(self.last_clause_each_turn) != 0:
                     turn = list(self.last_clause_each_turn.keys())[-1]
                     clause = self.last_clause_each_turn[turn]
+                    self.send_EOT(turn, clause)
 
-                    # clear from dict
-                    del self.last_clause_each_turn[turn]
+                if iu.status == "start":
+                    self.latest_processed_iu = iu
 
-                    # create and send IU
-                    self.terminal_logger.info("agent_EOT")
-                    self.file_logger.info("EOT")
-                    output_iu = self.create_iu(
-                        grounded_word=None,
-                        word_id=None,
-                        char_id=None,
-                        clause_id=clause,
-                        turn_id=turn,
-                        final=True,
-                        event="agent_EOT",
-                    )
+    def send_EOT(self, turnID, clauseID):
+        # clear from dict
+        del self.last_clause_each_turn[turnID]
 
-                    um = retico_core.UpdateMessage()
-                    # um.add_ius([(um_iu, retico_core.UpdateType.ADD) for um_iu in self.current_output + [output_iu]])
-                    # self.current_output = []
-                    um.add_iu(output_iu, retico_core.UpdateType.ADD)
-                    self.append(um)
+        # create and send IU
+        self.terminal_logger.info("agent_EOT")
+        self.file_logger.info("EOT")
+        output_iu = self.create_iu(
+            grounded_word=None,
+            word_id=None,
+            char_id=None,
+            clause_id=clauseID,
+            turn_id=turnID,
+            final=True,
+            event="agent_EOT",
+        )
+
+        um = retico_core.UpdateMessage()
+        # um.add_ius([(um_iu, retico_core.UpdateType.ADD) for um_iu in self.current_output + [output_iu]])
+        # self.current_output = []
+        um.add_iu(output_iu, retico_core.UpdateType.ADD)
+        self.append(um)
 
 
 """

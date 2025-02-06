@@ -79,7 +79,6 @@ from retico_conversational_agent_unity.additional_IUs import (
 )
 
 
-
 class LlmDmModule(retico_core.AbstractModule):
     """A retico module that provides Natural Language Generation (NLG) using a
     Large Language Model (LLM), and handles user interruption.
@@ -241,12 +240,8 @@ class LlmDmModule(retico_core.AbstractModule):
         """Calculates the stopping token patterns using the instantiated model
         tokenizer."""
         self.stop_token_ids.append(self.model.token_eos())
-        self.stop_token_text_patterns, self.role_token_text_patterns = (
-            self.dialogue_history.get_stop_patterns()
-        )
-        self.max_role_pattern_length = max(
-            [len(p) for p in self.role_token_text_patterns]
-        )
+        self.stop_token_text_patterns, self.role_token_text_patterns = self.dialogue_history.get_stop_patterns()
+        self.max_role_pattern_length = max([len(p) for p in self.role_token_text_patterns])
         for pat in self.stop_token_text_patterns:
             self.stop_token_patterns.append(self.model.tokenize(pat, add_bos=False))
         for pat in self.role_token_text_patterns:
@@ -341,9 +336,7 @@ class LlmDmModule(retico_core.AbstractModule):
         # check if the sentence we want to align has been stored in self.last_turn_agent_sentence
         if self.last_turn_agent_sentence_turn_id:
             if self.last_turn_agent_sentence_turn_id == iu.turn_id:
-                self.interruption_alignment_new_agent_sentence(
-                    self.last_turn_agent_sentence.decode("utf-8")
-                )
+                self.interruption_alignment_new_agent_sentence(self.last_turn_agent_sentence.decode("utf-8"))
 
     def remove_stop_patterns(self, sentence, pattern_id):
         """Function called when a stopping token pattern has been encountered
@@ -569,9 +562,7 @@ class LlmDmModule(retico_core.AbstractModule):
 
             # Check if the sentence generation should be stopped (interruption or EOT)
             is_stop_token = self.is_stop_token(token)
-            is_stop_pattern, stop_pattern, pattern_id = self.is_stop_pattern(
-                last_sentence
-            )
+            is_stop_pattern, stop_pattern, pattern_id = self.is_stop_pattern(last_sentence)
             if self.interruption:
                 self.which_stop_criteria = "interruption"
             elif is_stop_pattern:
@@ -653,9 +644,7 @@ class LlmDmModule(retico_core.AbstractModule):
 
         # REVOKE if role patterns
         if role_pattern is not None:
-            for id, token in enumerate(
-                role_pattern
-            ):  # take all IUs corresponding to stop pattern
+            for id, token in enumerate(role_pattern):  # take all IUs corresponding to stop pattern
                 iu = self.current_output.pop(
                     -1
                 )  # the IUs corresponding to the stop pattern are the last n ones where n=len(stop_pattern).
@@ -689,9 +678,7 @@ class LlmDmModule(retico_core.AbstractModule):
         prompt, prompt_tokens = self.prepare_dialogue_history()
         last_processed_iu = self.current_input[-1]
 
-        agent_sentence, agent_sentence_nb_tokens = self.generate_next_sentence(
-            prompt, prompt_tokens
-        )
+        agent_sentence, agent_sentence_nb_tokens = self.generate_next_sentence(prompt, prompt_tokens)
 
         next_um = retico_core.UpdateMessage()
 
@@ -710,9 +697,7 @@ class LlmDmModule(retico_core.AbstractModule):
         elif self.which_stop_criteria.startswith("stop_pattern"):
             # remove from agent sentence every word contained in the stop pattern encountered
             pattern_id = int(self.which_stop_criteria.split("_")[-1])
-            agent_sentence_reduced, nb_token_removed = self.remove_stop_patterns(
-                agent_sentence, pattern_id
-            )
+            agent_sentence_reduced, nb_token_removed = self.remove_stop_patterns(agent_sentence, pattern_id)
 
             # REVOKE every word contained in the stop pattern encountered
             for i in range(nb_token_removed - 1):
@@ -733,9 +718,7 @@ class LlmDmModule(retico_core.AbstractModule):
             )
 
             self.last_turn_agent_sentence = agent_sentence_reduced
-            self.last_turn_agent_sentence_nb_token = (
-                agent_sentence_nb_tokens - nb_token_removed
-            )
+            self.last_turn_agent_sentence_nb_token = agent_sentence_nb_tokens - nb_token_removed
             self.last_turn_agent_sentence_turn_id = last_processed_iu.turn_id
 
         elif self.which_stop_criteria == "stop_token":
@@ -756,9 +739,7 @@ class LlmDmModule(retico_core.AbstractModule):
             self.last_turn_agent_sentence_turn_id = last_processed_iu.turn_id
 
         else:
-            raise NotImplementedError(
-                "this which_stop_criteria has not been implemented"
-            )
+            raise NotImplementedError("this which_stop_criteria has not been implemented")
 
         print(f"LLM:\n{self.last_turn_agent_sentence}")
 
@@ -812,9 +793,7 @@ class LlmDmModule(retico_core.AbstractModule):
             elif isinstance(iu, SpeakerAlignementIU):
                 if ut == retico_core.UpdateType.ADD:
                     if iu.event == "interruption":
-                        self.terminal_logger.info(
-                            "LLM alignement interruption", debug=True
-                        )
+                        self.terminal_logger.info("LLM alignement interruption", debug=True)
                         self.interruption_alignment_last_agent_sentence(iu)
                     if iu.event == "agent_EOT":
                         self.terminal_logger.info(

@@ -117,12 +117,12 @@ class GestureDemoModule(retico_core.abstract.AbstractModule):
                     output_iu = self.create_iu(
                         turnID=iu.turn_id, clauseID=iu.clause_id, interrupt=0, audios=audios, animations=animations
                     )
-                    um = retico_core.UpdateMessage()
-                    um.add_iu(output_iu, retico_core.UpdateType.ADD)
-                    self.append(um)
-                    self.terminal_logger.info(
-                        "TestGestureDemo creates a retico IU",
-                    )
+                um = retico_core.UpdateMessage()
+                um.add_iu(output_iu, retico_core.UpdateType.ADD)
+                self.append(um)
+                self.terminal_logger.info(
+                    "TestGestureDemo creates a retico IU",
+                )
             # try:
             # turnID = self.cpt // 2
             # clauseID = self.cpt % 2

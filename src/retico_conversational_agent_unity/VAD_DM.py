@@ -160,9 +160,7 @@ class VadModule(retico_core.AbstractModule):
                         va_user=VA_user,
                         va_agent=self.VA_agent,
                     )
-                    um = retico_core.UpdateMessage.from_iu(
-                        output_iu, retico_core.UpdateType.ADD
-                    )
+                    um = retico_core.UpdateMessage.from_iu(output_iu, retico_core.UpdateType.ADD)
                     self.append(um)
 
                     # something for logging
