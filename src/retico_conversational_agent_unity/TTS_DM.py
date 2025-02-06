@@ -74,9 +74,7 @@ class TtsDmModule(retico_core.AbstractModule):
 
     @staticmethod
     def description():
-        return (
-            "A module that synthesizes speech from text using coqui-ai's TTS library."
-        )
+        return "A module that synthesizes speech from text using coqui-ai's TTS library."
 
     @staticmethod
     def input_ius():
@@ -212,9 +210,7 @@ class TtsDmModule(retico_core.AbstractModule):
         #     final_outputs = self.model.tts(text=text, speed=1.0)
 
         if len(final_outputs) != 2:
-            raise NotImplementedError(
-                "coqui TTS should output both wavforms and outputs"
-            )
+            raise NotImplementedError("coqui TTS should output both wavforms and outputs")
         else:
             waveforms, outputs = final_outputs
 
@@ -320,7 +316,7 @@ class TtsDmModule(retico_core.AbstractModule):
                         self.file_logger.info("EOT")
                         self.first_clause = True
                         um.add_iu(
-                            self.create_iu(grounded_in=clause_ius[-1], final=True),
+                            self.create_iu(grounded_in=clause_ius[-1], turn_id=clause_ius[-1].turn_id, final=True),
                             retico_core.UpdateType.ADD,
                         )
                     else:
@@ -331,9 +327,7 @@ class TtsDmModule(retico_core.AbstractModule):
                             self.first_clause = False
                         self.current_turn_id = clause_ius[-1].turn_id
                         output_ius = self.get_new_iu_buffer_from_clause_ius(clause_ius)
-                        um.add_ius(
-                            [(iu, retico_core.UpdateType.ADD) for iu in output_ius]
-                        )
+                        um.add_ius([(iu, retico_core.UpdateType.ADD) for iu in output_ius])
                         self.file_logger.info("send_clause")
                     self.append(um)
                 elif self.backchannel is not None:
@@ -394,9 +388,7 @@ class TtsDmModule(retico_core.AbstractModule):
         """
         # preprocess on words
         current_text, words = self.one_clause_text_and_words(clause_ius)
-        self.terminal_logger.info(
-            "TTS get iu clause", debug=True, current_text=current_text, words=words
-        )
+        self.terminal_logger.info("TTS get iu clause", debug=True, current_text=current_text, words=words)
 
         # pre_pro_words = []
         # pre_pro_words_distinct = []
@@ -436,8 +428,7 @@ class TtsDmModule(retico_core.AbstractModule):
             pre_pro_words_distinct = []
         else:
             pre_pro_words_distinct = [words[0 : pre_pro_words[0] + 1]] + [
-                words[x + 1 : pre_pro_words[i + 1] + 1]
-                for i, x in enumerate(pre_pro_words[:-1])
+                words[x + 1 : pre_pro_words[i + 1] + 1] for i, x in enumerate(pre_pro_words[:-1])
             ]
 
         self.terminal_logger.info(pre_pro_words, debug=True)
@@ -472,9 +463,7 @@ class TtsDmModule(retico_core.AbstractModule):
             wav_words_chunk_len = []
             old_len_w = 0
             for s_id in space_tokens_ids:
-                wav_words_chunk_len.append(
-                    int(sum(durations[old_len_w:s_id])) * NB_FRAME_PER_DURATION
-                )
+                wav_words_chunk_len.append(int(sum(durations[old_len_w:s_id])) * NB_FRAME_PER_DURATION)
                 # wav_words_chunk_len.append(int(sum(durations[old_len_w:s_id])) * len_wav / total_duration )
                 old_len_w = s_id
 

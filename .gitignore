@@ -6,3 +6,4 @@ run_plots/
 retico_conversational_agent_unity.egg-info
 build/
 _build/
+wav_files

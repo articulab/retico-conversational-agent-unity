@@ -312,7 +312,7 @@ def main_DM_unity():
     prompt_format_config = "configs/prompt_format_config.json"
     context_size = 2000
     destination = "/topic/AMQ_test"
-    destination_2 = "/topic/AMQ_test_2"
+    destination_2 = "/topic/AMQ_test_reception"
     ip = "localhost"
     # port = "61613"
     # ip = "192.168.76.242"
@@ -323,8 +323,9 @@ def main_DM_unity():
         partial(
             filter_cases,
             cases=[
-                [("debug", [True])],
-                # [("debug", [True]), ("module", ["DialogueManager Module"])],
+                # [("debug", [True])],
+                [("module", ["GestureDemo Module", "UnityReceptor Module"])],
+                [("debug", [True]), ("module", ["LLM DM Module", "TTS DM Module"])],
                 [("level", ["warning", "error"])],
             ],
             # cases=[
@@ -401,9 +402,9 @@ def main_DM_unity():
         device="cpu",
     )
 
-    speaker = SpeakerDmModule(
-        rate=tts_model_samplerate,
-    )
+    # speaker = SpeakerDmModule(
+    #     rate=tts_model_samplerate,
+    # )
 
     gesture_demo = GestureDemoModule()
 
@@ -414,6 +415,8 @@ def main_DM_unity():
     ar = AMQReader(ip=ip, port=port, print=printing)
 
     ul = UnityReceptorModule()
+
+    ar.add(destination=destination_2, target_iu_type=UnityMessageIU)
 
     # create network
     mic.subscribe(vad)
@@ -429,8 +432,11 @@ def main_DM_unity():
     # speaker.subscribe(vad)
     # speaker.subscribe(dm)
     gesture_demo.subscribe(bridge)
+    gesture_demo.subscribe(ul)
     bridge.subscribe(aw)
+    aw.subscribe(ar)  # just so that they are on the same network
     ar.subscribe(ul)
+    ul.subscribe(llm)  # to align dialogue history
 
     # running system
     try:
@@ -448,7 +454,7 @@ def main_DM_unity():
         )
 
 
-def main_demo_unity():
+def main_unity_producer():
     # parameters definition
     printing = False
     log_folder = "logs/run"
@@ -525,8 +531,8 @@ def main_demo_unity():
 
 
 if __name__ == "__main__":
-    main_demo_unity()
-    # main_DM_unity()
+    # main_unity_producer()
+    main_DM_unity()
     # main_DM()
     # test_cuda()
     # plot_once(plot_config_path="configs/plot_config_DM.json")

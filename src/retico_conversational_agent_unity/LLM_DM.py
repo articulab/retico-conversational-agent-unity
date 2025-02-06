@@ -274,6 +274,7 @@ class LlmDmModule(retico_core.AbstractModule):
                 corresponding to the agent sentence (without template
                 prefixes and suffixes).
         """
+        self.terminal_logger.info("LLM new_agent_sentence", text=agent_sentence, turn=turn_id, debug=True)
         self.dialogue_history.append_utterance(
             {
                 "turn_id": turn_id,
