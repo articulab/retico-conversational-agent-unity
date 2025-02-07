@@ -9,12 +9,12 @@ from retico_core import log_utils
 from retico_conversational_agent_unity.additional_IUs import DMIU, TextAlignedAudioIU
 
 
-class GestureGeneratorModule(retico_core.abstract.AbstractModule):
+class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
     """A Module producing audio action from TextAlignedAudioIUs from TTS."""
 
     @staticmethod
     def name():
-        return "GestureGenerator Module"
+        return "NonverbalGenerator Module"
 
     @staticmethod
     def description():
@@ -30,7 +30,7 @@ class GestureGeneratorModule(retico_core.abstract.AbstractModule):
 
     def __init__(self, **kwargs):
         """
-        Initialize the GestureGenerator Module.
+        Initialize the NonverbalGenerator Module.
         """
         super().__init__(**kwargs)
         self._thread_active = False
@@ -40,6 +40,11 @@ class GestureGeneratorModule(retico_core.abstract.AbstractModule):
         self.tts_framerate = 48000
         self.samplewidth = 2
         self.channels = 1
+
+        # from TTS module
+        self.first_clause = True
+        self.interrupted_turn = None
+        self.current_turn_id = None
 
     def prepare_run(self):
         super().prepare_run()
@@ -55,85 +60,31 @@ class GestureGeneratorModule(retico_core.abstract.AbstractModule):
         for iu, ut in update_message:
             if isinstance(iu, DMIU):
                 if ut == retico_core.UpdateType.ADD:
-                    if iu.action == "continue":
-                        self.terminal_logger.info("continue")
-                        self.file_logger.info("continue")
-                        output_iu = self.create_iu(
-                            event="continue",
-                        )
-                        um = retico_core.UpdateMessage.from_iu(output_iu, retico_core.UpdateType.ADD)
-                        self.append(um)
-                        self.audio_iu_buffer = self.interrupted_turn_iu_buffer
-                        self.soft_interrupted_iu = None
-
-                    if iu.action == "soft_interruption":
-                        self.terminal_logger.info(
-                            "soft_interruption",
-                            debug=True,
-                            # grounded_word=self.latest_processed_iu.grounded_word,
-                            # word_id=self.latest_processed_iu.word_id,
-                            # char_id=self.latest_processed_iu.char_id,
-                            clause_id=self.latest_processed_iu.clause_id,
-                            turn_id=self.latest_processed_iu.turn_id,
-                            final=iu.final,
-                        )
-                        self.file_logger.info("soft_interruption")
-                        # if some iu was outputted, send to LLM module for alignement
-                        if self.latest_processed_iu is not None:
-                            output_iu = self.create_iu(
-                                # grounded_word=self.latest_processed_iu.grounded_word,
-                                # word_id=self.latest_processed_iu.word_id,
-                                # char_id=self.latest_processed_iu.char_id,
-                                clause_id=self.latest_processed_iu.clause_id,
-                                turn_id=self.latest_processed_iu.turn_id,
-                                final=iu.final,
-                                event="interruption",
-                            )
-                            um = retico_core.UpdateMessage.from_iu(output_iu, retico_core.UpdateType.ADD)
-                            self.append(um)
-                            self.soft_interrupted_iu = output_iu
-                            self.interrupted_turn_iu_buffer = self.audio_iu_buffer
-                            self.audio_iu_buffer = []
-
-                        else:
-                            self.terminal_logger.info("speaker soft interruption but no outputted audio yet")
-                            self.file_logger.info("speaker soft interruption but no outputted audio yet")
-
                     if iu.action == "hard_interruption":
-                        self.terminal_logger.info("hard_interruption")
                         self.file_logger.info("hard_interruption")
-
-                        # if some iu was outputted, send to LLM module for alignement
-                        if self.latest_processed_iu is not None:
-                            output_iu = self.create_iu(
-                                # grounded_word=self.latest_processed_iu.grounded_word,
-                                # word_id=self.latest_processed_iu.word_id,
-                                # char_id=self.latest_processed_iu.char_id,
-                                clause_id=self.latest_processed_iu.clause_id,
-                                turn_id=self.latest_processed_iu.turn_id,
-                                final=iu.final,
-                                event="interruption",
-                            )
-                            um = retico_core.UpdateMessage()
-                            um.add_ius(
-                                [(um_iu, retico_core.UpdateType.ADD) for um_iu in self.current_output + [output_iu]]
-                            )
-                            self.append(um)
-                            self.interrupted_iu = output_iu
-                            # remove all audio in audio_buffer
-                            self.audio_iu_buffer = []
-                            self.current_output = []
-                            # self.latest_processed_iu = None
-
-                        else:
-                            self.terminal_logger.info("speaker interruption but no outputted audio yet")
-                            self.file_logger.info("speaker interruption but no outputted audio yet")
-
-                    elif iu.event == "user_BOT_same_turn":
-                        self.interrupted_iu = None
+                        self.interrupted_turn = self.current_turn_id
+                        self.first_clause = True
+                        self.current_input = []
+                    elif iu.action == "soft_interruption":
+                        self.file_logger.info("soft_interruption")
+                    elif iu.action == "stop_turn_id":
+                        self.terminal_logger.info(
+                            "STOP TURN ID",
+                            debug=True,
+                            iu_turn=iu.turn_id,
+                            curr=self.current_turn_id,
+                        )
+                        self.file_logger.info("stop_turn_id")
+                        if iu.turn_id > self.current_turn_id:
+                            self.interrupted_turn = self.current_turn_id
+                        self.first_clause = True
+                        self.current_input = []
+                    if iu.event == "user_BOT_same_turn":
+                        self.interrupted_turn = None
 
             if isinstance(iu, TextAlignedAudioIU):
                 clauses_ius.append(iu)
+
         self.audio_iu_buffer.append(clauses_ius)
 
     def run_process(self):
@@ -148,12 +99,17 @@ class GestureGeneratorModule(retico_core.abstract.AbstractModule):
                     self.terminal_logger.info("agent_EOT")
                     self.file_logger.info("EOT")
                     output_iu = self.create_iu(
-                        clause_id=clause_ius[0].clause_id,
                         turn_id=clause_ius[0].turn_id,
                         final=True,
                     )
                 else:
-                    output_iu = self.generate_gestures_one_clause(clause_ius)
+                    self.terminal_logger.info("EOC NV")
+                    if self.first_clause:
+                        self.terminal_logger.info("start_answer_generation")
+                        self.file_logger.info("start_answer_generation")
+                        self.first_clause = False
+                    self.current_turn_id = clause_ius[-1].turn_id
+                    output_iu = self.generate_nonverbal_one_clause(clause_ius)
 
                 self.latest_processed_iu = output_iu
                 um = retico_core.UpdateMessage()
@@ -266,17 +222,15 @@ class GestureGeneratorModule(retico_core.abstract.AbstractModule):
             # except Exception as e:
             #     log_utils.log_exception(module=self, exception=e)
 
-    def generate_gestures_one_clause(self, clause_ius):
+    def generate_nonverbal_one_clause(self, clause_ius):
         # recreate full audio
         full_data = b""
         full_sentence = ""
         for iu in clause_ius:
             full_data += bytes(iu.raw_audio)
             full_sentence += iu.grounded_word
-
         len_audio_bytes = len(full_data)
         len_audio_seconds = len_audio_bytes / (self.tts_framerate * self.samplewidth)
-
         self.terminal_logger.info(f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True)
 
         # save full audio into wav file
@@ -304,7 +258,6 @@ class GestureGeneratorModule(retico_core.abstract.AbstractModule):
                 "delay": 0.0,
             },
         ]
-
         output_iu = self.create_iu(
             turnID=iu.turn_id, clauseID=iu.clause_id, interrupt=0, audios=audios, animations=animations
         )
