@@ -161,10 +161,10 @@ class TtsDmModule(retico_core.AbstractModule):
         # general
         self.verbose = verbose
         self._tts_thread_active = False
-        self.iu_buffer = []
         self.buffer_pointer = 0
         self.interrupted_turn = -1
         self.current_turn_id = -1
+        self.clause_ius_buffer = []
 
         self.first_clause = True
         self.backchannel = None
@@ -254,9 +254,7 @@ class TtsDmModule(retico_core.AbstractModule):
         for iu, ut in update_message:
             if isinstance(iu, TurnTextIU):
                 if iu.turn_id != self.interrupted_turn:
-                    if ut == retico_core.UpdateType.ADD:
-                        continue
-                    elif ut == retico_core.UpdateType.REVOKE:
+                    if ut == retico_core.UpdateType.REVOKE:
                         self.revoke(iu)
                     elif ut == retico_core.UpdateType.COMMIT:
                         clause_ius.append(iu)
@@ -266,7 +264,7 @@ class TtsDmModule(retico_core.AbstractModule):
                         self.file_logger.info("hard_interruption")
                         self.interrupted_turn = self.current_turn_id
                         self.first_clause = True
-                        self.current_input = []
+                        self.clause_ius_buffer = []
                     elif iu.action == "soft_interruption":
                         self.file_logger.info("soft_interruption")
                     elif iu.action == "stop_turn_id":
@@ -280,19 +278,15 @@ class TtsDmModule(retico_core.AbstractModule):
                         if iu.turn_id > self.current_turn_id:
                             self.interrupted_turn = self.current_turn_id
                         self.first_clause = True
-                        self.current_input = []
+                        self.clause_ius_buffer = []
                     elif iu.action == "back_channel":
                         self.terminal_logger.info("TTS BC", debug=True)
                         self.backchannel = self.bc_text[random.randint(0, 5)]
                     if iu.event == "user_BOT_same_turn":
                         self.interrupted_turn = None
-                elif ut == retico_core.UpdateType.REVOKE:
-                    continue
-                elif ut == retico_core.UpdateType.COMMIT:
-                    continue
 
         if len(clause_ius) != 0:
-            self.current_input.append(clause_ius)
+            self.clause_ius_buffer.append(clause_ius)
 
     def _process_one_clause(self):
         """function running in a separate thread, that synthesize and sends
@@ -300,9 +294,12 @@ class TtsDmModule(retico_core.AbstractModule):
         the current_input buffer."""
         while self._tts_thread_active:
             try:
+                # if len(self.clause_ius_buffer) == 0:
+                #     time.sleep(0.1)
+                # else:
                 time.sleep(0.02)
-                if len(self.current_input) != 0:
-                    clause_ius = self.current_input.pop(0)
+                if len(self.clause_ius_buffer) != 0:
+                    clause_ius = self.clause_ius_buffer.pop(0)
                     end_of_turn = clause_ius[-1].final
                     um = retico_core.UpdateMessage()
                     if end_of_turn:
@@ -554,7 +551,6 @@ class TtsDmModule(retico_core.AbstractModule):
     def prepare_run(self):
         super().prepare_run()
         self.buffer_pointer = 0
-        self.iu_buffer = []
         self._tts_thread_active = True
         # threading.Thread(target=self._tts_thread).start()
         threading.Thread(target=self._process_one_clause).start()

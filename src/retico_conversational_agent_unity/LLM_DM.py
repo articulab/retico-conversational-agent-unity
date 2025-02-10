@@ -67,6 +67,7 @@ from llama_cpp import Llama
 import retico_core
 from retico_core.text import SpeechRecognitionIU
 from retico_core.log_utils import log_exception
+import retico_amq.utils as amqu
 
 from retico_conversational_agent_unity.dialogue_history import DialogueHistory
 from retico_conversational_agent_unity.utils import device_definition
@@ -134,6 +135,7 @@ class LlmDmModule(retico_core.AbstractModule):
             TextAlignedAudioIU,
             SpeakerAlignementIU,
             DMIU,
+            amqu.GestureIU,  # just because of UnityCommunicatorModule
         ]
 
     @staticmethod

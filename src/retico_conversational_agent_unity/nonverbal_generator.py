@@ -28,43 +28,43 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
     def output_iu():
         return amqu.GestureIU
 
-    def __init__(self, **kwargs):
+    def __init__(self, tts_framerate=48000, samplewidth=2, channels=1, **kwargs):
         """
         Initialize the NonverbalGenerator Module.
         """
         super().__init__(**kwargs)
         self._thread_active = False
         self.cpt = 0
-        self.audio_iu_buffer = []
-        self.interrupted_turn_iu_buffer = []
-        self.tts_framerate = 48000
-        self.samplewidth = 2
-        self.channels = 1
-
-        # from TTS module
+        self.clause_ius_buffer = []
+        self.tts_framerate = tts_framerate
+        self.samplewidth = samplewidth
+        self.channels = channels
         self.first_clause = True
-        self.interrupted_turn = None
-        self.current_turn_id = None
+        self.interrupted_turn = -1
+        self.current_turn_id = -1
 
     def prepare_run(self):
         super().prepare_run()
         self._thread_active = True
-        threading.Thread(target=self.run_process).start()
+        threading.Thread(target=self._nvg_thread).start()
 
     def shutdown(self):
         super().shutdown()
         self._thread_active = False
 
     def process_update(self, update_message):
-        clauses_ius = []
+        clause_ius = []
         for iu, ut in update_message:
+            if isinstance(iu, TextAlignedAudioIU):
+                if iu.turn_id != self.interrupted_turn:
+                    clause_ius.append(iu)
             if isinstance(iu, DMIU):
                 if ut == retico_core.UpdateType.ADD:
                     if iu.action == "hard_interruption":
                         self.file_logger.info("hard_interruption")
                         self.interrupted_turn = self.current_turn_id
                         self.first_clause = True
-                        self.current_input = []
+                        self.clause_ius_buffer = []
                     elif iu.action == "soft_interruption":
                         self.file_logger.info("soft_interruption")
                     elif iu.action == "stop_turn_id":
@@ -78,23 +78,20 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
                         if iu.turn_id > self.current_turn_id:
                             self.interrupted_turn = self.current_turn_id
                         self.first_clause = True
-                        self.current_input = []
+                        self.clause_ius_buffer = []
                     if iu.event == "user_BOT_same_turn":
                         self.interrupted_turn = None
+        if len(clause_ius) != 0:
+            self.clause_ius_buffer.append(clause_ius)
 
-            if isinstance(iu, TextAlignedAudioIU):
-                clauses_ius.append(iu)
-
-        self.audio_iu_buffer.append(clauses_ius)
-
-    def run_process(self):
+    def _nvg_thread(self):
         # The module doesn't send enough audio to have a continous signal, it's just a test module
         # If you want the module to send continous signal, change the time.sleep to time.sleep(self.frame_length), or the frame_length to 10
         while self._thread_active:
-            if len(self.audio_iu_buffer) == 0:
+            if len(self.clause_ius_buffer) == 0:
                 time.sleep(0.1)
             else:
-                clause_ius = self.audio_iu_buffer.pop(0)
+                clause_ius = self.clause_ius_buffer.pop(0)
                 if hasattr(clause_ius[0], "final") and clause_ius[0].final:
                     self.terminal_logger.info("agent_EOT")
                     self.file_logger.info("EOT")
@@ -102,6 +99,7 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
                         turn_id=clause_ius[0].turn_id,
                         final=True,
                     )
+                    self.first_clause = True
                 else:
                     self.terminal_logger.info("EOC NV")
                     if self.first_clause:
@@ -110,15 +108,65 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
                         self.first_clause = False
                     self.current_turn_id = clause_ius[-1].turn_id
                     output_iu = self.generate_nonverbal_one_clause(clause_ius)
+                    self.file_logger.info("send_clause")
 
-                self.latest_processed_iu = output_iu
                 um = retico_core.UpdateMessage()
                 um.add_iu(output_iu, retico_core.UpdateType.ADD)
                 self.append(um)
                 self.terminal_logger.info(
-                    "TestGestureDemo creates a retico IU",
+                    "NonverbalGenerator creates a retico IU",
                 )
 
+    def generate_nonverbal_one_clause(self, clause_ius):
+        # recreate full audio
+        full_data = b""
+        full_sentence = ""
+        for iu in clause_ius:
+            full_data += bytes(iu.raw_audio)
+            full_sentence += iu.grounded_word
+        len_audio_bytes = len(full_data)
+        len_audio_seconds = len_audio_bytes / (self.tts_framerate * self.samplewidth)
+        self.terminal_logger.info(f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True)
+
+        # save full audio into wav file
+        path = f"C:/Users/Sara Articulab/Documents/GitHub/retico_test/wav_files/clause_{clause_ius[0].clause_id}.wav"
+        with wave.open(path, "wb") as wav_file:
+            wav_file.setnchannels(self.channels)  # Set the number of channels
+            wav_file.setsampwidth(self.samplewidth)  # Set the sample width in bytes
+            wav_file.setframerate(self.tts_framerate)  # Set the frame rate (sample rate)
+            wav_file.writeframes(full_data)  # Write the audio byte data
+
+        # create audio action for AMQ
+        audios = [
+            {
+                "path": path,
+                "transcription": "TEST DEMO",
+                "volume": 1,
+                # "delay": 0,
+                # "Timing Index": 0
+            },
+        ]
+        animations = [
+            {
+                "animation": "talking_4_shorter",
+                "duration": len_audio_seconds,
+                "delay": 0.0,
+            },
+        ]
+        output_iu = self.create_iu(
+            turnID=iu.turn_id, clauseID=iu.clause_id, interrupt=0, audios=audios, animations=animations
+        )
+        return output_iu
+
+    def create_iu_from_dict(self, dict):
+        return self.create_iu(**dict)
+
+    def create_iu_from_json(self, path):
+        with open(path, "rb") as f:
+            data = json.load(f)
+            return self.create_iu(**data)
+
+            # In generate_nonverbal_one_clause
             # try:
             # turnID = self.cpt // 2
             # clauseID = self.cpt % 2
@@ -221,52 +269,3 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
             # time.sleep(30)
             # except Exception as e:
             #     log_utils.log_exception(module=self, exception=e)
-
-    def generate_nonverbal_one_clause(self, clause_ius):
-        # recreate full audio
-        full_data = b""
-        full_sentence = ""
-        for iu in clause_ius:
-            full_data += bytes(iu.raw_audio)
-            full_sentence += iu.grounded_word
-        len_audio_bytes = len(full_data)
-        len_audio_seconds = len_audio_bytes / (self.tts_framerate * self.samplewidth)
-        self.terminal_logger.info(f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True)
-
-        # save full audio into wav file
-        path = f"C:/Users/Sara Articulab/Documents/GitHub/retico_test/wav_files/clause_{clause_ius[0].clause_id}.wav"
-        with wave.open(path, "wb") as wav_file:
-            wav_file.setnchannels(self.channels)  # Set the number of channels
-            wav_file.setsampwidth(self.samplewidth)  # Set the sample width in bytes
-            wav_file.setframerate(self.tts_framerate)  # Set the frame rate (sample rate)
-            wav_file.writeframes(full_data)  # Write the audio byte data
-
-        # create audio action for AMQ
-        audios = [
-            {
-                "path": path,
-                "transcription": "TEST DEMO",
-                "volume": 1,
-                # "delay": 0,
-                # "Timing Index": 0
-            },
-        ]
-        animations = [
-            {
-                "animation": "talking_4_shorter",
-                "duration": len_audio_seconds,
-                "delay": 0.0,
-            },
-        ]
-        output_iu = self.create_iu(
-            turnID=iu.turn_id, clauseID=iu.clause_id, interrupt=0, audios=audios, animations=animations
-        )
-        return output_iu
-
-    def create_iu_from_dict(self, dict):
-        return self.create_iu(**dict)
-
-    def create_iu_from_json(self, path):
-        with open(path, "rb") as f:
-            data = json.load(f)
-            return self.create_iu(**data)
