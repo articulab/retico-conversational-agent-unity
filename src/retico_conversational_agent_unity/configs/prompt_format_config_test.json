@@ -1,0 +1,25 @@
+{
+    "user": {
+        "role": "Person A",
+        "role_sep": ":",
+        "pre": "",
+        "suf": "\n\n"
+    },
+    "agent": {
+        "role": "Person B",
+        "role_sep": ":",
+        "pre": "",
+        "suf": "\n\n"
+    },
+    "system_prompt": {
+        "pre": "<<SYS>>",
+        "suf": "<</SYS>>\n\n"
+    },
+    "prompt": {
+        "pre": "[INST] ",
+        "suf": " [/INST]"
+    },
+    "interruption": {
+        "suf": "..."
+    }
+}

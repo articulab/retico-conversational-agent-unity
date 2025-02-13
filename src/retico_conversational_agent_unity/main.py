@@ -3,8 +3,9 @@ import os
 from retico_conversational_agent_unity.gesture_demo import GestureDemoModule
 from retico_conversational_agent_unity.gesture_productor_demo import GestureProducerDemoModule
 from retico_conversational_agent_unity.nonverbal_generator import NonverbalGeneratorModule
-from retico_conversational_agent_unity.unity_communicator import UnityCommunicatorModule
-from retico_conversational_agent_unity.unity_receptor import UnityMessageIU, UnityReceptorModule
+from retico_conversational_agent_unity.unity_communicator import UnityMessageIU, UnityCommunicatorModule
+
+# from retico_conversational_agent_unity.unity_receptor import UnityMessageIU, UnityReceptorModule
 
 os.environ["KMP_DUPLICATE_LIB_OK"] = "TRUE"
 from functools import partial
@@ -599,8 +600,8 @@ def main_DM_unity_2():
             filter_cases,
             cases=[
                 # [("debug", [True])],
-                [("module", ["GestureDemo Module", "UnityReceptor Module"])],
-                [("debug", [True]), ("module", ["LLM DM Module", "TTS DM Module"])],
+                [("module", ["NonverbalGenerator Module", "UnityCommunicator Module", "AMQWriter Module"])],
+                # [("debug", [True]), ("module", ["LLM DM Module", "TTS DM Module"])],
                 [("level", ["warning", "error"])],
             ],
             # cases=[

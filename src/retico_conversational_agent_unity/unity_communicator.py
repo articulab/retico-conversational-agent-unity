@@ -59,6 +59,10 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
         self.last_clause_each_turn_temp = dict()
         self.last_command_started_but_not_ended = None
         self.first_clause = True
+        self.interrupted_iu = None
+        self.soft_interrupted_iu = None
+        self.interrupted_turn_iu_buffer = []
+        self.last_command_ended = None
 
     def prepare_run(self):
         super().prepare_run()
@@ -108,7 +112,10 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
                 else:
                     self.current_input.append(iu)
                     if hasattr(iu, "final") and iu.final:
-                        self.last_clause_each_turn[iu.turnID] = self.last_clause_each_turn_temp[iu.turnID]
+                        try:
+                            self.last_clause_each_turn[iu.turnID] = self.last_clause_each_turn_temp[iu.turnID]
+                        except Exception:
+                            print(f"last_clause_each_turn_temp do not have a value for key={iu.turnID}")
                         del self.last_clause_each_turn_temp[iu.turnID]
                         self.terminal_logger.info("DICT updated : ", dict=self.last_clause_each_turn)
                         self.file_logger.info("turn generated")
@@ -310,7 +317,7 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
                         self.terminal_logger.info("start_answer_generation")
                         self.file_logger.info("start_answer_generation")
                         self.first_clause = False
-                    self.current_turn_id = output_iu.turn_id
+                    self.current_turn_id = output_iu.turnID
 
                 um = retico_core.UpdateMessage()
                 um.add_iu(output_iu, retico_core.UpdateType.ADD)

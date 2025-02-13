@@ -96,7 +96,7 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
                     self.terminal_logger.info("agent_EOT")
                     self.file_logger.info("EOT")
                     output_iu = self.create_iu(
-                        turn_id=clause_ius[0].turn_id,
+                        turnID=clause_ius[0].turn_id,
                         final=True,
                     )
                     self.first_clause = True
@@ -126,7 +126,7 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
             full_sentence += iu.grounded_word
         len_audio_bytes = len(full_data)
         len_audio_seconds = len_audio_bytes / (self.tts_framerate * self.samplewidth)
-        self.terminal_logger.info(f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True)
+        # self.terminal_logger.info(f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True)
 
         # save full audio into wav file
         path = f"C:/Users/Sara Articulab/Documents/GitHub/retico_test/wav_files/clause_{clause_ius[0].clause_id}.wav"
