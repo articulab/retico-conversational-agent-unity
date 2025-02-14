@@ -466,6 +466,7 @@ def main_unity_producer():
     plot_live = True
     destination = "/topic/AMQ_test"
     destination_2 = "/topic/AMQ_test_reception"
+    headers = {"content-length": 12345}
     ip = "localhost"
     # port = "61613"
     # ip = "192.168.76.242"
@@ -478,7 +479,8 @@ def main_unity_producer():
             filter_cases,
             cases=[
                 # [("debug", [True])],
-                [("module", ["GestureProducerDemo Module", "UnityReceptor Module", "AMQReader Module"])],
+                [("module", ["AMQWriter Module"])],
+                # [("module", ["GestureProducerDemo Module", "UnityReceptor Module", "AMQReader Module"])],
                 [("level", ["warning", "error"])],
             ],
             # cases=[
@@ -501,7 +503,7 @@ def main_unity_producer():
 
     gesture_prod_demo = GestureProducerDemoModule()
 
-    bridge = AMQBridge([], destination)
+    bridge = AMQBridge(headers, destination)
 
     aw = AMQWriter(ip=ip, port=port, print=printing)
 
