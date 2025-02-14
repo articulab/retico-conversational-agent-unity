@@ -124,21 +124,28 @@ conv_list = [
 ]
 
 
-def generate_sentence(model, prompt, reset=True):
+def remove_stop_patterns(sentence, pattern_text, pattern_tokens):
+    sentence = sentence[: -len(pattern_text)]
+    nb_token_removed = len(pattern_tokens)
+    while sentence[-1:] == b"\n":
+        sentence = sentence[:-1]
+        nb_token_removed += 1
+    return sentence, nb_token_removed
+
+
+def generate_sentence(model, prompt, stop_patterns_tokens, stop_patterns_text, reset=True):
     start_tokenize = datetime.datetime.now()
     prompt_tokens = model.tokenize(bytes(prompt, encoding="utf-8"))
     end_tokenize = datetime.datetime.now()
     print("NB tokens = ", len(prompt_tokens))
     tokenize_duration = end_tokenize - start_tokenize
-    # pattern = bytes("\n\nChild:", encoding="utf-8")
-    pattern = bytes("\n\n", encoding="utf-8")
-    pattern_tokens = model.tokenize(pattern, add_bos=False)
 
     sentence = b""
     sentence_tokens = []
     generate_duration = None
     first_clause_duration = None
     first_clause_completed = False
+    pattern_id = None
     try:
         start_generate = datetime.datetime.now()
         for t in model.generate(
@@ -165,9 +172,18 @@ def generate_sentence(model, prompt, reset=True):
                     end_first_clause = datetime.datetime.now()
                     first_clause_duration = end_first_clause - start_generate
 
-            if pattern_tokens == sentence_tokens[-len(pattern_tokens) :]:
-                break
-            if pattern == sentence[-len(pattern) :]:
+            for id in range(len(stop_patterns_tokens)):
+                pattern = stop_patterns_text[id]
+                pattern_tokens = stop_patterns_tokens[id]
+                if sentence_tokens[-len(pattern_tokens) :] == pattern_tokens:
+                    pattern_id = id
+                    print("STOP PATTERN TOKENS")
+                    break
+                if sentence[-len(pattern) :] == pattern:
+                    pattern_id = id
+                    print("STOP PATTERN TEXT")
+                    break
+            if pattern_id is not None:
                 break
         end_generate = datetime.datetime.now()
         generate_duration = end_generate - start_generate
@@ -180,6 +196,9 @@ def generate_sentence(model, prompt, reset=True):
         print(traceback.format_exc())
 
     sentence_1 = model.detokenize(sentence_tokens).decode("utf-8")
+    sentence_1, nb_token_removed = remove_stop_patterns(
+        sentence_1, stop_patterns_text[pattern_id], stop_patterns_tokens[pattern_id]
+    )
     # print(f"\n\n sentence : {sentence_1}")
 
     return (
@@ -191,10 +210,15 @@ def generate_sentence(model, prompt, reset=True):
 
 
 def run_multiple_turns(model, first_turn, nb_turns, dh):
+    # stop_patterns_text = [bytes("\n\n", encoding="utf-8")]
+    # pattern = bytes("\n\nChild:", encoding="utf-8")
+    stop_patterns_text, stop_patterns_text_user = dh.get_stop_patterns()
+    print("STOP PATTERNS = ", stop_patterns_text)
+    stop_patterns_tokens = [model.tokenize(pattern, add_bos=False) for pattern in stop_patterns_text]
     durations = []
     for i in range(nb_turns):
         prompt = dh.get_prompt()
-        sentence, td, gt, ct = generate_sentence(model, prompt, reset=True)
+        sentence, td, gt, ct = generate_sentence(model, prompt, stop_patterns_tokens, stop_patterns_text, reset=True)
         durations.append([td, gt, ct])
         llm_u = {
             "turn_id": first_turn + i,
@@ -234,25 +258,26 @@ first_10_DH = DialogueHistory(
     initial_system_prompt=system_prompt,
     context_size=context_size,
 )
-full_DH_exclude_last_nb_turns = DialogueHistory(
-    prompt_format_config_file=prompt_format_config,
-    terminal_logger=terminal_logger,
-    initial_system_prompt=system_prompt,
-    context_size=context_size,
-)
-full_DH = DialogueHistory(
-    prompt_format_config_file=prompt_format_config,
-    terminal_logger=terminal_logger,
-    initial_system_prompt=system_prompt,
-    context_size=context_size,
-)
-longer_DH = DialogueHistory(
-    prompt_format_config_file=prompt_format_config,
-    terminal_logger=terminal_logger,
-    initial_system_prompt=system_prompt,
-    context_size=context_size,
-)
-longer_DH_size = context_size - 1500
+# full_DH_exclude_last_nb_turns = DialogueHistory(
+#     prompt_format_config_file=prompt_format_config,
+#     terminal_logger=terminal_logger,
+#     initial_system_prompt=system_prompt,
+#     context_size=context_size,
+# )
+# full_DH = DialogueHistory(
+#     prompt_format_config_file=prompt_format_config,
+#     terminal_logger=terminal_logger,
+#     initial_system_prompt=system_prompt,
+#     context_size=context_size,
+# )
+# longer_DH = DialogueHistory(
+#     prompt_format_config_file=prompt_format_config,
+#     terminal_logger=terminal_logger,
+#     initial_system_prompt=system_prompt,
+#     context_size=context_size,
+# )
+# longer_DH_size = context_size - 1500
+
 utterances = []
 for i, turn in enumerate(conv_list):
     role, sentence = turn
@@ -261,31 +286,29 @@ for i, turn in enumerate(conv_list):
         "speaker": "agent" if role == "Person B" else "user",
         "text": sentence,
     }
-    longer_DH.append_utterance(u)
-    full_DH.append_utterance(u)
-    if i < len(conv_list) - (nb_turns * 2):
-        print("nb turns = ", len(conv_list) - (nb_turns * 2))
-        full_DH_exclude_last_nb_turns.append_utterance(u)
+    # longer_DH.append_utterance(u)
+    # full_DH.append_utterance(u)
+    # if i < len(conv_list) - (nb_turns * 2):
+    #     print("nb turns = ", len(conv_list) - (nb_turns * 2))
+    #     full_DH_exclude_last_nb_turns.append_utterance(u)
     utterances.append(u)
     if i <= 10:
         first_10_DH.append_utterance(u)
 
 # construct longer_DH
-dh_size = len(model.tokenize(bytes(longer_DH.get_prompt(), encoding="utf-8")))
-i = 0
-while dh_size < longer_DH_size:
-    longer_DH.append_utterance(utterances[i])
-    i = i + 1 if i < len(utterances) - 2 else 0
-    dh_size = len(model.tokenize(bytes(longer_DH.get_prompt(), encoding="utf-8")))
+# dh_size = len(model.tokenize(bytes(longer_DH.get_prompt(), encoding="utf-8")))
+# i = 0
+# while dh_size < longer_DH_size:
+#     longer_DH.append_utterance(utterances[i])
+#     i = i + 1 if i < len(utterances) - 2 else 0
+#     dh_size = len(model.tokenize(bytes(longer_DH.get_prompt(), encoding="utf-8")))
 
 print("\n\nDialogue Histories completed")
-print(
-    f"size DHs : first_10_DH {len(first_10_DH.get_dialogue_history())},\
-    full_DH_exclude_last_nb_turns {len(full_DH_exclude_last_nb_turns.get_dialogue_history())},\
-    full_DH {len(full_DH.get_dialogue_history())},\
-    longer_DH {len(longer_DH.get_dialogue_history())},\
-    nb utterances {len(utterances)}"
-)
+print(f"size DHs : first_10_DH {len(first_10_DH.get_dialogue_history())}")
+# print(f"full_DH_exclude_last_nb_turns {len(full_DH_exclude_last_nb_turns.get_dialogue_history())}")
+# print(f"full_DH {len(full_DH.get_dialogue_history())}")
+# print(f"longer_DH {len(longer_DH.get_dialogue_history())}")
+print(f"nb utterances {len(utterances)}")
 
 punctuation_text = [b".", b",", b";", b":", b"!", b"?", b"..."]
 punctuation_ids = [b[0] for b in punctuation_text]
@@ -307,87 +330,81 @@ nb_tokens_in_DH.append([nb_token_start, nb_token_end])
 print(f"n\n###########################################################\n\nprint result : {dh.get_prompt()}")
 model.reset()
 
-# full_DH_exclude_last_nb_turns
-first_turn = len(utterances) - nb_turns * 2
-dh = full_DH_exclude_last_nb_turns
-nb_turns_start = len(dh.get_dialogue_history()) - 1
-nb_token_start = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
-durations.append(run_multiple_turns(model, first_turn, nb_turns, dh))
-nb_turns_end = len(dh.get_dialogue_history()) - 1
-nb_token_end = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
-nb_turns_in_DH.append([nb_turns_start, nb_turns_end])
-nb_tokens_in_DH.append([nb_token_start, nb_token_end])
-print(f"\n\n###########################################################\n\nprint result : {dh.get_prompt()}")
-model.reset()
+# # full_DH_exclude_last_nb_turns
+# first_turn = len(utterances) - nb_turns * 2
+# dh = full_DH_exclude_last_nb_turns
+# nb_turns_start = len(dh.get_dialogue_history()) - 1
+# nb_token_start = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
+# durations.append(run_multiple_turns(model, first_turn, nb_turns, dh))
+# nb_turns_end = len(dh.get_dialogue_history()) - 1
+# nb_token_end = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
+# nb_turns_in_DH.append([nb_turns_start, nb_turns_end])
+# nb_tokens_in_DH.append([nb_token_start, nb_token_end])
+# print(f"\n\n###########################################################\n\nprint result : {dh.get_prompt()}")
+# model.reset()
 
-# full_DH
-first_turn = len(utterances) - nb_turns * 2
-dh = full_DH
-nb_turns_start = len(dh.get_dialogue_history()) - 1
-nb_token_start = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
-durations.append(run_multiple_turns(model, first_turn, nb_turns, dh))
-nb_turns_end = len(dh.get_dialogue_history()) - 1
-nb_token_end = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
-nb_turns_in_DH.append([nb_turns_start, nb_turns_end])
-nb_tokens_in_DH.append([nb_token_start, nb_token_end])
-print(f"n\n###########################################################\n\nprint result : {dh.get_prompt()}")
-model.reset()
+# # full_DH
+# first_turn = len(utterances) - nb_turns * 2
+# dh = full_DH
+# nb_turns_start = len(dh.get_dialogue_history()) - 1
+# nb_token_start = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
+# durations.append(run_multiple_turns(model, first_turn, nb_turns, dh))
+# nb_turns_end = len(dh.get_dialogue_history()) - 1
+# nb_token_end = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
+# nb_turns_in_DH.append([nb_turns_start, nb_turns_end])
+# nb_tokens_in_DH.append([nb_token_start, nb_token_end])
+# print(f"n\n###########################################################\n\nprint result : {dh.get_prompt()}")
+# model.reset()
 
-# longer_DH
-first_turn = len(utterances) - nb_turns * 2
-dh = longer_DH
-nb_turns_start = len(dh.get_dialogue_history()) - 1
-nb_token_start = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
-durations.append(run_multiple_turns(model, first_turn, nb_turns, dh))
-nb_turns_end = len(dh.get_dialogue_history()) - 1
-nb_token_end = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
-nb_turns_in_DH.append([nb_turns_start, nb_turns_end])
-nb_tokens_in_DH.append([nb_token_start, nb_token_end])
-print(f"n\n###########################################################\n\nprint result : {dh.get_prompt()}")
-model.reset()
+# # longer_DH
+# first_turn = len(utterances) - nb_turns * 2
+# dh = longer_DH
+# nb_turns_start = len(dh.get_dialogue_history()) - 1
+# nb_token_start = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
+# durations.append(run_multiple_turns(model, first_turn, nb_turns, dh))
+# nb_turns_end = len(dh.get_dialogue_history()) - 1
+# nb_token_end = len(model.tokenize(bytes(dh.get_prompt(), encoding="utf-8")))
+# nb_turns_in_DH.append([nb_turns_start, nb_turns_end])
+# nb_tokens_in_DH.append([nb_token_start, nb_token_end])
+# print(f"n\n###########################################################\n\nprint result : {dh.get_prompt()}")
+# model.reset()
 
-print(
-    f"nb_turns_in_DH :\
-    \nDH_first_10 : start: {nb_turns_in_DH[0][0]}, end: {nb_turns_in_DH[0][1]}\
-    \nDH_last_10 : start: {nb_turns_in_DH[1][0]}, end: {nb_turns_in_DH[1][1]}\
-    \nfull_DH : start: {nb_turns_in_DH[2][0]}, end: {nb_turns_in_DH[2][1]}\
-    \nlonger_DH : start: {nb_turns_in_DH[3][0]}, end: {nb_turns_in_DH[3][1]}"
-)
+print("nb_turns_in_DH :")
+print(f"\nDH_first_10 : start: {nb_turns_in_DH[0][0]}, end: {nb_turns_in_DH[0][1]}")
+# print(f"\nDH_last_10 : start: {nb_turns_in_DH[1][0]}, end: {nb_turns_in_DH[1][1]}")
+# print(f"\nfull_DH : start: {nb_turns_in_DH[2][0]}, end: {nb_turns_in_DH[2][1]}")
+# print(f"\nlonger_DH : start: {nb_turns_in_DH[3][0]}, end: {nb_turns_in_DH[3][1]}")
 
-print(
-    f"nb_tokens_in_DH :\
-    \nDH_first_10 : start: {nb_tokens_in_DH[0][0]}, end: {nb_tokens_in_DH[0][1]}\
-    \nDH_last_10 : start: {nb_tokens_in_DH[1][0]}, end: {nb_tokens_in_DH[1][1]}\
-    \nfull_DH : start: {nb_tokens_in_DH[2][0]}, end: {nb_tokens_in_DH[2][1]}\
-    \nlonger_DH : {nb_tokens_in_DH[3][0]}, end: {nb_tokens_in_DH[3][1]}"
-)
+print("nb_tokens_in_DH :")
+print(f"\nDH_first_10 : start: {nb_tokens_in_DH[0][0]}, end: {nb_tokens_in_DH[0][1]}")
+# print(f"\nDH_last_10 : start: {nb_tokens_in_DH[1][0]}, end: {nb_tokens_in_DH[1][1]}")
+# print(f"\nfull_DH : start: {nb_tokens_in_DH[2][0]}, end: {nb_tokens_in_DH[2][1]}")
+# print(f"\nlonger_DH : start: {nb_tokens_in_DH[3][0]}, end: {nb_tokens_in_DH[3][1]}")
+
 print(durations)
-print(
-    f"mean durations :\
-    \nDH_first_10 : {sum([d[1] for d in durations[0]])/nb_turns}\
-    \nDH_last_10 : {sum([d[1] for d in durations[1]])/nb_turns}\
-    \nfull_DH : {sum([d[1] for d in durations[2]])/nb_turns}\
-    \nlonger_DH : {sum([d[1] for d in durations[3]])/nb_turns}"
-)
-print(
-    f"mean durations first clause :\
-    \nDH_first_10 : {sum([d[2] for d in durations[0]])/nb_turns}\
-    \nDH_last_10 : {sum([d[2] for d in durations[1]])/nb_turns}\
-    \nfull_DH : {sum([d[2] for d in durations[2]])/nb_turns}\
-    \nlonger_DH : {sum([d[2] for d in durations[2]])/nb_turns}"
-)
+
+print("mean durations :")
+print(f"\nDH_first_10 : {sum([d[1] for d in durations[0]])/nb_turns}")
+# print(f"\nDH_last_10 : {sum([d[1] for d in durations[1]])/nb_turns}")
+# print(f"\nfull_DH : {sum([d[1] for d in durations[2]])/nb_turns}")
+# print(f"\nlonger_DH : {sum([d[1] for d in durations[3]])/nb_turns}")
+print("mean durations first clause :")
+print(f"\nDH_first_10 : {sum([d[2] for d in durations[0]])/nb_turns}")
+# print(f"\nDH_last_10 : {sum([d[2] for d in durations[1]])/nb_turns}")
+# print(f"\nfull_DH : {sum([d[2] for d in durations[2]])/nb_turns}")
+# print(f"\nlonger_DH : {sum([d[2] for d in durations[3]])/nb_turns}")
 
 x = list(range(nb_turns))
 print(x)
 fig, ax = plt.subplots()
 ax.plot(x, [d[1] for d in durations[0]], "blue", label="DH_first_10")
 ax.plot(x, [d[2] for d in durations[0]], "blue", alpha=0.2, label="DH_first_10 first_clause")
-ax.plot(x, [d[1] for d in durations[1]], "brown", label="DH_until_last_10")
-ax.plot(x, [d[2] for d in durations[1]], "brown", alpha=0.2, label="DH_until_last_10 first_clause")
-ax.plot(x, [d[1] for d in durations[2]], "forestgreen", label="full_DH")
-ax.plot(x, [d[2] for d in durations[2]], "forestgreen", alpha=0.2, label="full_DH first_clause")
-ax.plot(x, [d[1] for d in durations[3]], "darkviolet", label="longer_DH")
-ax.plot(x, [d[2] for d in durations[3]], "darkviolet", alpha=0.2, label="longer_DH first_clause")
+# ax.plot(x, [d[1] for d in durations[1]], "brown", label="DH_until_last_10")
+# ax.plot(x, [d[2] for d in durations[1]], "brown", alpha=0.2, label="DH_until_last_10 first_clause")
+# ax.plot(x, [d[1] for d in durations[2]], "forestgreen", label="full_DH")
+# ax.plot(x, [d[2] for d in durations[2]], "forestgreen", alpha=0.2, label="full_DH first_clause")
+# ax.plot(x, [d[1] for d in durations[3]], "darkviolet", label="longer_DH")
+# ax.plot(x, [d[2] for d in durations[3]], "darkviolet", alpha=0.2, label="longer_DH first_clause")
 # ax.plot(x, [d[1] for d in durations[3]], "forestgreen", label="augmented_DH ")
 # ax.plot(x, [d[2] for d in durations[3]], "forestgreen", alpha=0.2, label="augmented_DH first_clause")
 ax.set_xlabel("id run")

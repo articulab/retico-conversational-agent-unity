@@ -327,8 +327,8 @@ def main_DM_unity():
             filter_cases,
             cases=[
                 # [("debug", [True])],
-                [("module", ["GestureDemo Module", "UnityReceptor Module"])],
-                [("debug", [True]), ("module", ["LLM DM Module", "TTS DM Module"])],
+                # [("module", ["GestureDemo Module", "UnityReceptor Module"])],
+                # [("debug", [True]), ("module", ["LLM DM Module", "TTS DM Module"])],
                 [("level", ["warning", "error"])],
             ],
             # cases=[
@@ -394,6 +394,7 @@ def main_DM_unity():
         dialogue_history=dialogue_history,
         printing=printing,
         device=device,
+        # verbose=True,
     )
 
     tts = TtsDmModule(
@@ -417,7 +418,7 @@ def main_DM_unity():
 
     ar = AMQReader(ip=ip, port=port, print=printing)
 
-    ul = UnityReceptorModule()
+    # ul = UnityReceptorModule()
 
     ar.add(destination=destination_2, target_iu_type=UnityMessageIU)
 
@@ -435,11 +436,11 @@ def main_DM_unity():
     # speaker.subscribe(vad)
     # speaker.subscribe(dm)
     gesture_demo.subscribe(bridge)
-    gesture_demo.subscribe(ul)
+    # gesture_demo.subscribe(ul)
     bridge.subscribe(aw)
     aw.subscribe(ar)  # just so that they are on the same network
-    ar.subscribe(ul)
-    ul.subscribe(llm)  # to align dialogue history
+    # ar.subscribe(ul)
+    # ul.subscribe(llm)  # to align dialogue history
 
     # running system
     try:
@@ -506,27 +507,27 @@ def main_unity_producer():
 
     ar = AMQReader(ip=ip, port=port, print=printing)
 
-    ul = UnityReceptorModule()
+    # ul = UnityReceptorModule()
 
     ar.add(destination=destination_2, target_iu_type=UnityMessageIU)
 
     # create network
     gesture_prod_demo.subscribe(bridge)
-    gesture_prod_demo.subscribe(ul)
+    # gesture_prod_demo.subscribe(ul)
     bridge.subscribe(aw)
     aw.subscribe(ar)  # just so that they are on the same network
-    ar.subscribe(ul)
+    # ar.subscribe(ul)
 
     # running system
     try:
-        network.run(ul)
+        network.run(bridge)
         # terminal_logger.info("Dialog system running until ENTER key is pressed")
         print("Dialog system running until ENTER key is pressed")
         input()
-        network.stop(ul)
+        network.stop(bridge)
     except Exception:
         terminal_logger.exception("exception in main")
-        network.stop(ul)
+        network.stop(bridge)
     finally:
         plot_once(
             plot_config_path=plot_config_path,
@@ -667,6 +668,7 @@ def main_DM_unity_2():
         dialogue_history=dialogue_history,
         printing=printing,
         device=device,
+        verbose=True,
     )
 
     tts = TtsDmModule(
@@ -731,8 +733,8 @@ def main_DM_unity_2():
 
 
 if __name__ == "__main__":
-    # main_unity_producer()
-    main_DM_unity_2()
+    main_unity_producer()
+    # main_DM_unity_2()
     # main_DM_unity()
     # main_DM()
     # test_cuda()

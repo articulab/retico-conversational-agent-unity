@@ -227,6 +227,25 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
                         um.add_iu(output_iu, retico_core.UpdateType.ADD)
                         self.append(um)
                     self.last_command_started_but_not_ended = iu
+
+                    # testing with John's space key
+                    if iu.requestID[0:5] == "billy" and len(self.last_clause_each_turn) != 0:
+                        turn = list(self.last_clause_each_turn.keys())[-1]
+                        clause = self.last_clause_each_turn[turn]
+
+                        if self.last_command_started_but_not_ended is None or (
+                            self.last_command_started_but_not_ended.turnID is not None
+                            and turn is not None
+                            and self.last_command_started_but_not_ended.turnID < turn
+                        ):
+                            self.file_logger.info("unity_agent_BOT")
+                            output_iu = self.create_speaker_alignement_iu(
+                                clause_id=clause, turn_id=turn, event="agent_BOT"
+                            )
+                            um = retico_core.UpdateMessage()
+                            um.add_iu(output_iu, retico_core.UpdateType.ADD)
+                            self.append(um)
+                    self.last_command_started_but_not_ended = iu
                 elif iu.status == "completed":
                     self.terminal_logger.info("command completed", command=iu.requestID)
                     self.file_logger.info("command completed", command=iu.requestID)
@@ -258,6 +277,20 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
                     um = retico_core.UpdateMessage()
                     um.add_iu(output_iu, retico_core.UpdateType.ADD)
                     self.append(um)
+
+                    # testing with John's space key
+                    if iu.requestID[0:5] == "billy" and len(self.last_clause_each_turn) != 0:
+                        self.terminal_logger.info("command interrupted", command=iu.requestID)
+                        self.file_logger.info("command interrupted", command=iu.requestID)
+                        self.file_logger.info("unity_interruption")
+                        turn = list(self.last_clause_each_turn.keys())[-1]
+                        clause = self.last_clause_each_turn[turn]
+                        output_iu = self.create_speaker_alignement_iu(
+                            clause_id=clause, turn_id=turn, event="interruption"
+                        )
+                        um = retico_core.UpdateMessage()
+                        um.add_iu(output_iu, retico_core.UpdateType.ADD)
+                        self.append(um)
                 elif iu.status == "aborted":
                     self.terminal_logger.info("command aborted", command=iu.requestID)
                     self.file_logger.info("command aborted", command=iu.requestID)
@@ -272,7 +305,7 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
         output_ius.append(
             self.create_speaker_alignement_iu(
                 turn_id=turnID,
-                # clause_id=clauseID,
+                clause_id=clauseID,
                 event="ius_from_last_turn",
             )
         )
@@ -280,7 +313,7 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
         output_ius.append(
             self.create_speaker_alignement_iu(
                 turn_id=turnID,
-                # clause_id=clauseID,
+                clause_id=clauseID,
                 event="agent_EOT",
             )
         )
