@@ -1,4 +1,5 @@
 import json
+import os
 import pathlib
 import threading
 import time
@@ -131,8 +132,11 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
 
         # save full audio into wav file
         current_local_path = pathlib.Path(__file__).parent.resolve()
-        print(current_local_path)
-        path = f"{current_local_path}\wav_files\clause_{clause_ius[0].clause_id}.wav"
+        folder_path = f"{current_local_path}/wav_files/"
+        filename = f"clause_{clause_ius[0].clause_id}.wav"
+        path = folder_path + filename
+        if not os.path.exists(folder_path):
+            os.makedirs(folder_path)
         with wave.open(path, "wb") as wav_file:
             wav_file.setnchannels(self.channels)  # Set the number of channels
             wav_file.setsampwidth(self.samplewidth)  # Set the sample width in bytes

@@ -735,8 +735,8 @@ def main_DM_unity_2():
 
 
 if __name__ == "__main__":
-    main_unity_producer()
-    # main_DM_unity_2()
+    # main_unity_producer()
+    main_DM_unity_2()
     # main_DM_unity()
     # main_DM()
     # test_cuda()
