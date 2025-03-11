@@ -2,8 +2,10 @@ import threading
 import time
 import retico_core
 
+# import retico_amq.utils as amqu
+from retico_amq import utils as amqu
+
 from retico_conversational_agent_unity.additional_IUs import DMIU, SpeakerAlignementIU
-import retico_amq.utils as amqu
 
 
 class UnityMessageIU(retico_core.abstract.IncrementalUnit):
