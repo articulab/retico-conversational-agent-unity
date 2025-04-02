@@ -4,11 +4,10 @@ import pathlib
 import threading
 import time
 import wave
-from retico_amq import utils as amqu
-import retico_core
-from retico_core import log_utils
 
-from retico_conversational_agent_unity.additional_IUs import DMIU, TextAlignedAudioIU
+import retico_core
+from retico_amq import GestureIU
+from retico_conversational_agent import DMIU, TextAlignedAudioIU
 
 
 class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
@@ -28,7 +27,7 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
 
     @staticmethod
     def output_iu():
-        return amqu.GestureIU
+        return GestureIU
 
     def __init__(self, tts_framerate=48000, samplewidth=2, channels=1, **kwargs):
         """
@@ -109,7 +108,8 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
                         self.file_logger.info("start_answer_generation")
                         self.first_clause = False
                     self.current_turn_id = clause_ius[-1].turn_id
-                    output_iu = self.generate_nonverbal_one_clause(clause_ius)
+                    # output_iu = self.generate_nonverbal_one_clause_audio_file(clause_ius)
+                    output_iu = self.generate_nonverbal_one_clause_audio_bytes(clause_ius)
                     self.file_logger.info("send_clause")
 
                 um = retico_core.UpdateMessage()
@@ -119,7 +119,7 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
                     "NonverbalGenerator creates a retico IU",
                 )
 
-    def generate_nonverbal_one_clause(self, clause_ius):
+    def generate_nonverbal_one_clause_audio_file(self, clause_ius):
         # recreate full audio
         full_data = b""
         full_sentence = ""
@@ -147,6 +147,39 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
         audios = [
             {
                 "path": path,
+                "transcription": "TEST DEMO",
+                "volume": 1,
+                # "delay": 0,
+                # "Timing Index": 0
+            },
+        ]
+        animations = [
+            {
+                "animation": "talking_4_shorter",
+                "duration": len_audio_seconds,
+                "delay": 0.0,
+            },
+        ]
+        output_iu = self.create_iu(
+            turnID=iu.turn_id, clauseID=iu.clause_id, interrupt=0, audios=audios, animations=animations
+        )
+        return output_iu
+
+    def generate_nonverbal_one_clause_audio_bytes(self, clause_ius):
+        # recreate full audio
+        full_data = b""
+        full_sentence = ""
+        for iu in clause_ius:
+            full_data += bytes(iu.raw_audio)
+            full_sentence += iu.grounded_word
+        len_audio_bytes = len(full_data)
+        len_audio_seconds = len_audio_bytes / (self.tts_framerate * self.samplewidth)
+        # self.terminal_logger.info(f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True)
+
+        # create audio action for AMQ
+        audios = [
+            {
+                "bytes": full_data,
                 "transcription": "TEST DEMO",
                 "volume": 1,
                 # "delay": 0,

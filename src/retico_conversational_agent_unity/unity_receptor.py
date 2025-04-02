@@ -1,36 +1,7 @@
 import retico_core
-
-from retico_conversational_agent_unity.additional_IUs import SpeakerAlignementIU
-import retico_amq.utils as amqu
-
-
-class UnityMessageIU(retico_core.abstract.IncrementalUnit):
-
-    @staticmethod
-    def type():
-        return "Unity Message IU"
-
-    def __init__(
-        self,
-        timestamp=None,
-        requestID=None,
-        turnID=None,
-        clauseID=None,
-        status=None,
-        timeStart=None,
-        timeEnd=None,
-        timingIndex=None,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.timestamp = timestamp
-        self.requestID = requestID
-        self.turnID = turnID
-        self.clauseID = clauseID
-        self.status = status
-        self.timeStart = timeStart
-        self.timeEnd = timeEnd
-        self.timingIndex = timingIndex
+from retico_amq import GestureIU
+from retico_conversational_agent import DMIU, SpeakerAlignementIU
+from .additional_IUs import UnityMessageIU
 
 
 class UnityReceptorModule(retico_core.abstract.AbstractModule):
@@ -44,7 +15,7 @@ class UnityReceptorModule(retico_core.abstract.AbstractModule):
 
     @staticmethod
     def input_ius():
-        return [UnityMessageIU, amqu.GestureIU]
+        return [UnityMessageIU, GestureIU]
 
     @staticmethod
     def output_iu():
@@ -62,7 +33,7 @@ class UnityReceptorModule(retico_core.abstract.AbstractModule):
             return None
 
         for iu, ut in update_message:
-            if isinstance(iu, amqu.GestureIU):
+            if isinstance(iu, GestureIU):
                 self.terminal_logger.info("message received from GestureProducer", iu=iu.__dict__)
                 if hasattr(iu, "final") and iu.final:
                     self.last_clause_each_turn[iu.turnID] = self.last_clause_each_turn_temp[iu.turnID]

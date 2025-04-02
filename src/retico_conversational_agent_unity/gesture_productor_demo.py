@@ -1,12 +1,9 @@
 import json
 import threading
 import time
-import wave
-from retico_amq import utils as amqu
-import retico_core
-from retico_core import log_utils
 
-from retico_conversational_agent_unity.additional_IUs import TextAlignedAudioIU
+import retico_core
+from retico_amq import GestureIU
 
 
 class GestureProducerDemoModule(retico_core.abstract.AbstractProducingModule):
@@ -25,7 +22,7 @@ class GestureProducerDemoModule(retico_core.abstract.AbstractProducingModule):
 
     @staticmethod
     def output_iu():
-        return amqu.GestureIU
+        return GestureIU
 
     def __init__(self, **kwargs):
         """
