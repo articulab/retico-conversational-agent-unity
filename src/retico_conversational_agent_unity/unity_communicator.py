@@ -1,40 +1,10 @@
 import threading
 import time
+
 import retico_core
-
-# import retico_amq.utils as amqu
-from retico_amq import utils as amqu
-
-from retico_conversational_agent_unity.additional_IUs import DMIU, SpeakerAlignementIU
-
-
-class UnityMessageIU(retico_core.abstract.IncrementalUnit):
-
-    @staticmethod
-    def type():
-        return "Unity Message IU"
-
-    def __init__(
-        self,
-        timestamp=None,
-        requestID=None,
-        turnID=None,
-        clauseID=None,
-        status=None,
-        timeStart=None,
-        timeEnd=None,
-        timingIndex=None,
-        **kwargs,
-    ):
-        super().__init__(**kwargs)
-        self.timestamp = timestamp
-        self.requestID = requestID
-        self.turnID = turnID
-        self.clauseID = clauseID
-        self.status = status
-        self.timeStart = timeStart
-        self.timeEnd = timeEnd
-        self.timingIndex = timingIndex
+from retico_amq import GestureIU
+from retico_conversational_agent import DMIU, SpeakerAlignementIU
+from .additional_IUs import UnityMessageIU
 
 
 class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
@@ -48,7 +18,7 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
 
     @staticmethod
     def input_ius():
-        return [DMIU, UnityMessageIU, amqu.GestureIU]
+        return [DMIU, UnityMessageIU, GestureIU]
 
     @staticmethod
     def output_iu():
@@ -81,7 +51,7 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
             return None
 
         for iu, ut in update_message:
-            if isinstance(iu, amqu.GestureIU):
+            if isinstance(iu, GestureIU):
                 self.terminal_logger.info("message received from NonverbalGenerator", iu=iu.__dict__)
 
                 # check interruptions
@@ -116,9 +86,9 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
                     if hasattr(iu, "final") and iu.final:
                         try:
                             self.last_clause_each_turn[iu.turnID] = self.last_clause_each_turn_temp[iu.turnID]
+                            del self.last_clause_each_turn_temp[iu.turnID]
                         except Exception:
                             print(f"last_clause_each_turn_temp do not have a value for key={iu.turnID}")
-                        del self.last_clause_each_turn_temp[iu.turnID]
                         self.terminal_logger.info("DICT updated : ", dict=self.last_clause_each_turn)
                         self.file_logger.info("turn generated")
                     else:
@@ -384,6 +354,7 @@ public class Audio : Action {
     public float endTime = 1;
 
     public string path = "something.wav";
+    public bytes bytes = "/x00/x00";
     public string transcription = "I said this";
     public float volume = 1f;
 

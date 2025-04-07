@@ -4,18 +4,12 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "retico-conversational-agent-unity"
-authors = [{ name = "Marius Le Chapelier", email = "mariuslechaper@gmail.com" }]
+authors = [{ name = "Marius Le Chapelier", email = "mariuslechapelier@gmail.com" }]
 description = ""
 readme = "README.md"
 license = { file = "LICENSE" }
 version = "0.0.1"
 requires-python = ">=3.11.7"
 dependencies = [
-    "pydub",
-    "webrtcvad",
-    "faster_whisper",
-    "llama-cpp-python",
-    "retico-core @ git+https://github.com/articulab/retico-core.git",
-    # "TTS[py3117] @ git+https://github.com/articulab/CoquiTTS.git@dev",
-    "TTS[versionless] @ git+https://github.com/articulab/CoquiTTS",
+    "retico-conversational-agent @ git+https://github.com/articulab/retico-conversational-agent.git",
 ]
