@@ -86,9 +86,9 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
                     if hasattr(iu, "final") and iu.final:
                         try:
                             self.last_clause_each_turn[iu.turnID] = self.last_clause_each_turn_temp[iu.turnID]
+                            del self.last_clause_each_turn_temp[iu.turnID]
                         except Exception:
                             print(f"last_clause_each_turn_temp do not have a value for key={iu.turnID}")
-                        del self.last_clause_each_turn_temp[iu.turnID]
                         self.terminal_logger.info("DICT updated : ", dict=self.last_clause_each_turn)
                         self.file_logger.info("turn generated")
                     else:

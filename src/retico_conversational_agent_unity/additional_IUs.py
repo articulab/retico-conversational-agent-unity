@@ -24,6 +24,7 @@ class UnityMessageIU(retico_core.abstract.IncrementalUnit):
         timeStart=None,
         timeEnd=None,
         timingIndex=None,
+        interrupt=None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -35,3 +36,4 @@ class UnityMessageIU(retico_core.abstract.IncrementalUnit):
         self.timeStart = timeStart
         self.timeEnd = timeEnd
         self.timingIndex = timingIndex
+        self.interrupt = interrupt

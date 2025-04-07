@@ -72,6 +72,7 @@ def main_DM_unity():
     plot_live = True
     prompt_format_config = "configs/prompt_format_config.json"
     context_size = 2000
+    store_audio = True
     ip = "localhost"
     port = "61613"
 
@@ -85,6 +86,7 @@ def main_DM_unity():
             filter_cases,
             cases=[
                 # [("debug", [True])],
+                [("module", ["NonverbalGenerator Module", "UnityCommunicator Module", "TTS DM Module"])],
                 # [("module", ["GestureDemo Module", "UnityReceptor Module"])],
                 # [("debug", [True]), ("module", ["LLM DM Module", "TTS DM Module"])],
                 [("level", ["warning", "error"])],
@@ -169,9 +171,7 @@ def main_DM_unity():
     llm.subscribe(tts)
 
     unity_comm = uagent.UnityCommunicatorModule()
-    nvg = uagent.NonverbalGeneratorModule(
-        tts_framerate=tts_model_samplerate,
-    )
+    nvg = uagent.NonverbalGeneratorModule(tts_framerate=tts_model_samplerate, store_audio=store_audio)
     # gesture_demo = uagent.GestureDemoModule()
     # gesture_prod_demo = uagent.GestureProducerDemoModule()
     tts.subscribe(nvg)
@@ -186,7 +186,12 @@ def main_DM_unity():
         {"destination": destination_unity_out, "iu_type": uagent.UnityMessageIU, "subscriber_modules": [unity_comm]},
     ]
     amq.define_amq_network(
-        modules_out_dict=dict_out, modules_in_dict=dict_in, verbose=printing, ip=ip, port=port, message_is_bytes=True
+        modules_out_dict=dict_out,
+        modules_in_dict=dict_in,
+        verbose=printing,
+        ip=ip,
+        port=port,
+        message_is_bytes=not store_audio,
     )
 
     # running system
