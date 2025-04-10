@@ -217,7 +217,7 @@ if __name__ == "__main__":
     )
     args = parser.parse_args()
     if args.cuda_test is not None:
-        agent.main.test_cuda(args.cuda_test)
+        agent.test_cuda(args.cuda_test)
     else:
         main_DM_unity()
     plot_once(plot_config_path="configs/plot_config_DM.json")
