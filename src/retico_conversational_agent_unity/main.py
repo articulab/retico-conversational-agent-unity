@@ -72,7 +72,7 @@ def main_DM_unity():
     plot_live = True
     prompt_format_config = "configs/prompt_format_config.json"
     context_size = 2000
-    store_audio = True
+    store_audio = False
     ip = "localhost"
     port = "61613"
 
@@ -86,7 +86,18 @@ def main_DM_unity():
             filter_cases,
             cases=[
                 # [("debug", [True])],
-                [("module", ["NonverbalGenerator Module", "UnityCommunicator Module", "TTS DM Module"])],
+                [
+                    (
+                        "module",
+                        [
+                            "NonverbalGenerator Module",
+                            "UnityCommunicator Module",
+                            "TTS DM Module",
+                            "AMQReader Module",
+                            "AMQWriter Module",
+                        ],
+                    )
+                ],
                 # [("module", ["GestureDemo Module", "UnityReceptor Module"])],
                 # [("debug", [True]), ("module", ["LLM DM Module", "TTS DM Module"])],
                 [("level", ["warning", "error"])],
@@ -188,10 +199,12 @@ def main_DM_unity():
     amq.define_amq_network(
         modules_out_dict=dict_out,
         modules_in_dict=dict_in,
-        verbose=printing,
+        verbose=True,
         ip=ip,
         port=port,
-        message_is_bytes=not store_audio,
+        # message_is_bytes=not store_audio,
+        message_out_is_bytes=not store_audio,
+        message_in_is_bytes=not store_audio,
     )
 
     # running system
