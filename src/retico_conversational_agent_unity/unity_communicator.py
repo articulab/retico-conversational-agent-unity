@@ -52,7 +52,6 @@ class UnityCommunicatorModule(retico_core.abstract.AbstractModule):
 
         for iu, ut in update_message:
             if isinstance(iu, GestureIU):
-                self.terminal_logger.info("message received from NonverbalGenerator", iu=iu.__dict__)
 
                 # check interruptions
                 if self.interrupted_iu is not None:

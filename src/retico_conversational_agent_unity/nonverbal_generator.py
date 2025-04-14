@@ -1,3 +1,4 @@
+import io
 import json
 import os
 import pathlib
@@ -183,6 +184,14 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
         len_audio_bytes = len(full_data)
         len_audio_seconds = len_audio_bytes / (self.tts_framerate * self.samplewidth)
         # self.terminal_logger.info(f"len_audio {len_audio_bytes} {len_audio_seconds} {full_sentence}", debug=True)
+
+        # convert audio_bytes to make it possible to play in Unity
+        full_data = retico_core.audio.convert_audio_PCM16_to_WAVPCM16(
+            raw_audio=full_data,
+            sample_rate=clause_ius[0].rate if clause_ius[0].rate else self.tts_framerate,
+            num_channels=self.channels,
+            sampwidth=clause_ius[0].sample_width if clause_ius[0].sample_width else self.samplewidth,
+        )
 
         # create audio action for AMQ
         interrupt = 2
