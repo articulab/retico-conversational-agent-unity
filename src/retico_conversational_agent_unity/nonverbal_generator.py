@@ -67,7 +67,7 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
         for iu, ut in update_message:
             if isinstance(iu, TextAlignedAudioIU):
                 if iu.turn_id != self.interrupted_turn:
-                    clause_ius.append(iu)  # ? Append the clauses
+                    clause_ius.append(iu)  # ? Append the clauses to buffer
             if isinstance(iu, DMIU):
                 if ut == retico_core.UpdateType.ADD:
                     if iu.action == "hard_interruption":
