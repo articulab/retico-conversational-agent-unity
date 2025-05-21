@@ -30,7 +30,14 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
     def output_iu():
         return GestureIU
 
-    def __init__(self, tts_framerate=48000, samplewidth=2, channels=1, store_audio=False, **kwargs):
+    def __init__(
+        self,
+        tts_framerate=48000,
+        samplewidth=2,
+        channels=1,
+        store_audio=False,
+        **kwargs,
+    ):
         """
         Initialize the NonverbalGenerator Module.
         """
@@ -60,7 +67,7 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
         for iu, ut in update_message:
             if isinstance(iu, TextAlignedAudioIU):
                 if iu.turn_id != self.interrupted_turn:
-                    clause_ius.append(iu)
+                    clause_ius.append(iu)  # ? Append the clauses
             if isinstance(iu, DMIU):
                 if ut == retico_core.UpdateType.ADD:
                     if iu.action == "hard_interruption":
@@ -111,9 +118,13 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
                         self.first_clause = False
                     self.current_turn_id = clause_ius[-1].turn_id
                     if self.store_audio:
-                        output_iu = self.generate_nonverbal_one_clause_audio_file(clause_ius)
+                        output_iu = self.generate_nonverbal_one_clause_audio_file(
+                            clause_ius
+                        )
                     else:
-                        output_iu = self.generate_nonverbal_one_clause_audio_bytes(clause_ius)
+                        output_iu = self.generate_nonverbal_one_clause_audio_bytes(
+                            clause_ius
+                        )
                     self.file_logger.info("send_clause")
 
                 um = retico_core.UpdateMessage()
@@ -144,7 +155,9 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
         with wave.open(path, "wb") as wav_file:
             wav_file.setnchannels(self.channels)  # Set the number of channels
             wav_file.setsampwidth(self.samplewidth)  # Set the sample width in bytes
-            wav_file.setframerate(self.tts_framerate)  # Set the frame rate (sample rate)
+            wav_file.setframerate(
+                self.tts_framerate
+            )  # Set the frame rate (sample rate)
             wav_file.writeframes(full_data)  # Write the audio byte data
 
         # create audio action for AMQ
@@ -188,9 +201,15 @@ class NonverbalGeneratorModule(retico_core.abstract.AbstractModule):
         # convert audio_bytes to make it possible to play in Unity
         full_data = retico_core.audio.convert_audio_PCM16_to_WAVPCM16(
             raw_audio=full_data,
-            sample_rate=clause_ius[0].rate if clause_ius[0].rate else self.tts_framerate,
+            sample_rate=(
+                clause_ius[0].rate if clause_ius[0].rate else self.tts_framerate
+            ),
             num_channels=self.channels,
-            sampwidth=clause_ius[0].sample_width if clause_ius[0].sample_width else self.samplewidth,
+            sampwidth=(
+                clause_ius[0].sample_width
+                if clause_ius[0].sample_width
+                else self.samplewidth
+            ),
         )
 
         # create audio action for AMQ
